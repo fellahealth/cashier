@@ -44,7 +44,22 @@ Run `npm run format:check && npm run lint && npm run typecheck && npm test && np
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), for example `feat: add coupons resource` or `fix(recurly): map expired card errors`.
 
-Keep pull requests focused on one change and describe what you changed and why. Update `CHANGELOG.md` under an `Unreleased` heading when the change affects users.
+Keep pull requests focused on one change and describe what you changed and why. If you squash merge, make sure the pull request title is a Conventional Commit too, since it becomes the commit message on `main`.
+
+## Releases
+
+Releases are fully automated with [semantic-release](https://semantic-release.gitbook.io/). Every push to `main` runs the Release workflow, which runs all checks and then reads the commits since the last release to decide the next version:
+
+| Commit                                                      | Release                  |
+| ----------------------------------------------------------- | ------------------------ |
+| `fix: ...` or `perf: ...`                                   | Patch, for example 0.1.1 |
+| `feat: ...`                                                 | Minor, for example 0.2.0 |
+| `feat!: ...` or a `BREAKING CHANGE:` footer                 | Major, for example 1.0.0 |
+| `docs`, `chore`, `ci`, `test`, `build`, `refactor`, `style` | No release               |
+
+When there is something to release, the workflow creates the `vX.Y.Z` tag, publishes a GitHub Release with notes generated from the commits, and publishes the package to npm under [`@aios-medical`](https://www.npmjs.com/org/aios-medical) with provenance. Nothing is committed back to the repository, so the `version` in `package.json` stays at `0.0.0-development`. The published version comes from the tag.
+
+Never bump the version or publish by hand.
 
 ## Reporting security issues
 
