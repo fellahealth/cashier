@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are released for the latest minor version of `@fellahealth/cashier`.
+Security fixes are released for the latest minor version of `@aios-medical/cashier`.
 
 | Version | Supported |
 | ------- | --------- |

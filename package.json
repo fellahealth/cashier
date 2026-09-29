@@ -1,9 +1,9 @@
 {
-  "name": "@fellahealth/cashier",
+  "name": "@aios-medical/cashier",
   "version": "0.1.0",
   "description": "One API for customers, invoices, products, prices and subscriptions across Stripe and Recurly.",
   "license": "MIT",
-  "author": "Fella Health",
+  "author": "AIOS",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fellahealth/cashier.git"

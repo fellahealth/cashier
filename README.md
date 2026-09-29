@@ -1,6 +1,6 @@
 # Cashier
 
-[![npm](https://img.shields.io/npm/v/@fellahealth/cashier.svg)](https://www.npmjs.com/package/@fellahealth/cashier)
+[![npm](https://img.shields.io/npm/v/@aios-medical/cashier.svg)](https://www.npmjs.com/package/@aios-medical/cashier)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 One TypeScript API for customers, invoices, products, prices and subscriptions on Stripe and Recurly.
@@ -16,7 +16,7 @@ Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set
 ## Install
 
 ```bash
-npm install @fellahealth/cashier stripe recurly
+npm install @aios-medical/cashier stripe recurly
 ```
 
 `stripe` (v13) and `recurly` (v4.67 or later) are peer dependencies. Install both, since Cashier loads both clients. Node.js 20 or later is required.
@@ -24,7 +24,7 @@ npm install @fellahealth/cashier stripe recurly
 ## Quick start
 
 ```ts
-import { cashier, PaymentFailedError } from '@fellahealth/cashier';
+import { cashier, PaymentFailedError } from '@aios-medical/cashier';
 
 const billing = cashier.use('stripe', {
   apiKey: process.env.STRIPE_SECRET_KEY!,
@@ -166,7 +166,7 @@ Every error has these properties:
 You can match on the class or on `code`:
 
 ```ts
-import { CashierError, NotFoundError } from '@fellahealth/cashier';
+import { CashierError, NotFoundError } from '@aios-medical/cashier';
 
 try {
   await billing.customers.get('cus_123');
@@ -191,7 +191,7 @@ With NestJS:
 
 ```ts
 import { Injectable, Module } from '@nestjs/common';
-import { Cashier, CashierDriver, Subscription } from '@fellahealth/cashier';
+import { Cashier, CashierDriver, Subscription } from '@aios-medical/cashier';
 
 @Injectable()
 export class BillingService {
@@ -219,7 +219,7 @@ In a test, provide a fake in place of `Cashier`:
 
 ```ts
 import { Test } from '@nestjs/testing';
-import { Cashier, CashierDriver } from '@fellahealth/cashier';
+import { Cashier, CashierDriver } from '@aios-medical/cashier';
 
 const driver = {
   provider: 'stripe',
@@ -237,7 +237,7 @@ const moduleRef = await Test.createTestingModule({
 Without a framework, pass the instance to your constructor:
 
 ```ts
-import { Cashier, CashierDriver } from '@fellahealth/cashier';
+import { Cashier, CashierDriver } from '@aios-medical/cashier';
 
 class BillingService {
   private readonly billing: CashierDriver;
@@ -260,4 +260,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report a security issue, see [SECURIT
 
 ## License
 
-[MIT](LICENSE) © Fella Health
+[MIT](LICENSE) © AIOS
