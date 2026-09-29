@@ -1,7 +1,7 @@
 {
   "name": "@aios-medical/cashier",
   "version": "0.1.0",
-  "description": "Provider-agnostic subscription billing for Node.js and TypeScript. One API for Stripe and Recurly with typed errors and NestJS support.",
+  "description": "Provider-agnostic subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support.",
   "license": "MIT",
   "author": "AIOS",
   "repository": {

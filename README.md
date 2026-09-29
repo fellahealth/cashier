@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@aios-medical/cashier.svg)](https://www.npmjs.com/package/@aios-medical/cashier)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Provider-agnostic subscription billing for Node.js and TypeScript. One API for Stripe and Recurly with typed errors and NestJS support.
+Provider-agnostic subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support. Stripe and Recurly are supported today.
 
 Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set of methods and types. Your code asks for a driver, calls `driver.subscriptions.create(...)`, and gets back the same `Subscription` shape whichever provider is behind it. Provider errors are turned into a small set of typed errors, so you can handle a declined card or a missing customer the same way on both.
 
