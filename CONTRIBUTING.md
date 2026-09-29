@@ -37,7 +37,7 @@ Run `npm run format:check && npm run lint && npm run typecheck && npm test && np
 - Map every provider error to a `CashierError` subclass. Never let a raw provider error escape.
 - Return amounts in minor units and currency codes in uppercase.
 - Add or update tests for every change in behavior.
-- Keep code free of comments and JSDoc. Document behavior in the README instead.
+- Keep code free of comments and JSDoc. Document behavior in `docs/` instead, and keep the README short.
 - Use neutral example data in tests, such as `pro-monthly` or `customer-42`.
 
 ## Commits and pull requests
