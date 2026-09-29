@@ -1,0 +1,29 @@
+import { CustomersResource } from './customer.types';
+import { InvoicesResource } from './invoice.types';
+import { PricesResource } from './price.types';
+import { ProductsResource } from './product.types';
+import { SubscriptionsResource } from './subscription.types';
+
+export type CashierProvider = 'stripe' | 'recurly';
+
+export interface StripeOptions {
+  apiKey: string;
+}
+
+export interface RecurlyOptions {
+  apiKey: string;
+}
+
+export interface CashierProviderOptions {
+  stripe: StripeOptions;
+  recurly: RecurlyOptions;
+}
+
+export interface CashierDriver {
+  readonly provider: CashierProvider;
+  readonly customers: CustomersResource;
+  readonly invoices: InvoicesResource;
+  readonly products: ProductsResource;
+  readonly prices: PricesResource;
+  readonly subscriptions: SubscriptionsResource;
+}

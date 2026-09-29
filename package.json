@@ -1,0 +1,82 @@
+{
+  "name": "@fellahealth/cashier",
+  "version": "0.1.0",
+  "description": "One API for customers, invoices, products, prices and subscriptions across Stripe and Recurly.",
+  "license": "MIT",
+  "author": "Fella Health",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fellahealth/cashier.git"
+  },
+  "homepage": "https://github.com/fellahealth/cashier#readme",
+  "bugs": {
+    "url": "https://github.com/fellahealth/cashier/issues"
+  },
+  "keywords": [
+    "billing",
+    "payments",
+    "subscriptions",
+    "invoices",
+    "stripe",
+    "recurly",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "recurly": "^4.67.0",
+    "stripe": "^13.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@swc/core": "^1.16.12",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.43",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "jest": "^30.5.2",
+    "prettier": "^3.9.9",
+    "recurly": "^4.81.0",
+    "stripe": "^13.11.0",
+    "tsup": "^8.5.1",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
