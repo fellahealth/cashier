@@ -11,6 +11,7 @@ Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set
 - Consistent results: amounts in minor units (cents), uppercase ISO 4217 currency codes, `Date` objects for timestamps.
 - Typed errors such as `NotFoundError`, `PaymentFailedError` and `RateLimitError`, with the original provider error kept as `cause`.
 - Works from CommonJS and ES modules, with TypeScript types included.
+- Fits NestJS and other dependency injection containers: register `new Cashier()` as a provider and inject it. See [Dependency injection](#dependency-injection).
 - No runtime dependencies besides the provider clients you install yourself.
 
 ## Install
