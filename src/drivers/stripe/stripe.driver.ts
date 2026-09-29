@@ -1,0 +1,24 @@
+import Stripe from 'stripe';
+import { CashierDriver } from '../../types/cashier.types';
+import { StripeCustomersResource } from './resources/stripe-customers.resource';
+import { StripeInvoicesResource } from './resources/stripe-invoices.resource';
+import { StripeProductsResource } from './resources/stripe-products.resource';
+import { StripePricesResource } from './resources/stripe-prices.resource';
+import { StripeSubscriptionsResource } from './resources/stripe-subscriptions.resource';
+
+export class StripeDriver implements CashierDriver {
+  readonly provider = 'stripe' as const;
+  readonly customers: StripeCustomersResource;
+  readonly invoices: StripeInvoicesResource;
+  readonly products: StripeProductsResource;
+  readonly prices: StripePricesResource;
+  readonly subscriptions: StripeSubscriptionsResource;
+
+  constructor(client: Stripe) {
+    this.customers = new StripeCustomersResource(client);
+    this.invoices = new StripeInvoicesResource(client);
+    this.products = new StripeProductsResource(client);
+    this.prices = new StripePricesResource(client);
+    this.subscriptions = new StripeSubscriptionsResource(client);
+  }
+}
