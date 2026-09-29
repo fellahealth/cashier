@@ -1,6 +1,6 @@
 {
   "name": "@aios-medical/cashier",
-  "version": "0.1.0",
+  "version": "0.0.0-development",
   "description": "Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support.",
   "license": "MIT",
   "author": "AIOS",
@@ -75,18 +75,21 @@
     "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.43",
+    "conventional-changelog-conventionalcommits": "^10.4.0",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",
     "jest": "^30.5.2",
     "prettier": "^3.9.9",
     "recurly": "^4.81.0",
+    "semantic-release": "^25.0.9",
     "stripe": "^13.11.0",
     "tsup": "^8.5.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }
