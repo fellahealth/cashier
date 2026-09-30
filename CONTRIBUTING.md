@@ -50,14 +50,16 @@ Keep pull requests focused on one change and describe what you changed and why. 
 
 Releases are fully automated with [semantic-release](https://semantic-release.gitbook.io/). Every push to `main` runs the Release workflow, which runs all checks and then reads the commits since the last release to decide the next version:
 
-| Commit                                                      | Release                  |
-| ----------------------------------------------------------- | ------------------------ |
-| `fix: ...` or `perf: ...`                                   | Patch, for example 0.1.1 |
-| `feat: ...`                                                 | Minor, for example 0.2.0 |
-| `feat!: ...` or a `BREAKING CHANGE:` footer                 | Major, for example 1.0.0 |
-| `docs`, `chore`, `ci`, `test`, `build`, `refactor`, `style` | No release               |
+| Commit                                              | Release                  |
+| --------------------------------------------------- | ------------------------ |
+| `fix: ...`, `perf: ...` or `docs: ...`              | Patch, for example 0.1.1 |
+| `feat: ...`                                         | Minor, for example 0.2.0 |
+| `feat!: ...` or a `BREAKING CHANGE:` footer         | Major, for example 1.0.0 |
+| `chore`, `ci`, `test`, `build`, `refactor`, `style` | No release               |
 
 When there is something to release, the workflow creates the `vX.Y.Z` tag, publishes a GitHub Release with notes generated from the commits, and publishes the package to npm under [`@aios-medical`](https://www.npmjs.com/org/aios-medical) with provenance. Nothing is committed back to the repository, so the `version` in `package.json` stays at `0.0.0-development`. The published version comes from the tag.
+
+`docs` commits publish a patch because npm only updates the README shown on npmjs.com when a new version is published. Use `chore` for changes that should not be released, such as typo fixes in CONTRIBUTING.md.
 
 Never bump the version or publish by hand.
 
