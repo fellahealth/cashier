@@ -1,7 +1,7 @@
 # Cashier
 
 [![npm](https://img.shields.io/npm/v/@aios-medical/cashier.svg)](https://www.npmjs.com/package/@aios-medical/cashier)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/fellahealth/cashier/blob/main/LICENSE)
 
 Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support. Stripe and Recurly are supported today.
 
@@ -11,7 +11,7 @@ Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set
 - Consistent results: amounts in minor units (cents), uppercase ISO 4217 currency codes, `Date` objects for timestamps.
 - Typed errors such as `NotFoundError`, `PaymentFailedError` and `RateLimitError`, with the original provider error kept as `cause`.
 - Works from CommonJS and ES modules, with TypeScript types included.
-- Fits NestJS and other dependency injection containers: register `new Cashier()` as a provider and inject it. See [Dependency injection](docs/dependency-injection.md).
+- Fits NestJS and other dependency injection containers: register `new Cashier()` as a provider and inject it. See [Dependency injection](https://github.com/fellahealth/cashier/blob/main/docs/dependency-injection.md).
 - No runtime dependencies besides the provider clients you install yourself.
 
 ## Install
@@ -64,25 +64,25 @@ const billing = cashier.use('recurly', {
 
 ## Documentation
 
-Every resource works the same way on each provider. The full reference, with parameters, provider behavior and returned objects, is in [`docs/`](docs/README.md).
+Every resource works the same way on each provider. The full reference, with parameters, provider behavior and returned objects, is in [`docs/`](https://github.com/fellahealth/cashier/blob/main/docs/README.md).
 
-| Resource                               | Methods                                                                                                                                                                                                                                                                            |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Customers](docs/customers.md)         | [`get`](docs/customers.md#customersgetcustomerid), [`list`](docs/customers.md#customerslistparams), [`create`](docs/customers.md#customerscreateparams), [`update`](docs/customers.md#customersupdatecustomerid-params)                                                            |
-| [Invoices](docs/invoices.md)           | [`get`](docs/invoices.md#invoicesgetinvoiceid), [`list`](docs/invoices.md#invoiceslistparams), [`pay`](docs/invoices.md#invoicespayinvoiceid-params), [`void`](docs/invoices.md#invoicesvoidinvoiceid)                                                                             |
-| [Products](docs/products.md)           | [`get`](docs/products.md#productsgetproductid), [`list`](docs/products.md#productslistparams)                                                                                                                                                                                      |
-| [Prices](docs/prices.md)               | [`get`](docs/prices.md#pricesgetpriceid), [`list`](docs/prices.md#priceslistparams)                                                                                                                                                                                                |
-| [Subscriptions](docs/subscriptions.md) | [`create`](docs/subscriptions.md#subscriptionscreateparams), [`get`](docs/subscriptions.md#subscriptionsgetsubscriptionid), [`update`](docs/subscriptions.md#subscriptionsupdatesubscriptionid-params), [`cancel`](docs/subscriptions.md#subscriptionscancelsubscriptionid-params) |
+| Resource                                                                                | Methods                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Customers](https://github.com/fellahealth/cashier/blob/main/docs/customers.md)         | [`get`](https://github.com/fellahealth/cashier/blob/main/docs/customers.md#customersgetcustomerid), [`list`](https://github.com/fellahealth/cashier/blob/main/docs/customers.md#customerslistparams), [`create`](https://github.com/fellahealth/cashier/blob/main/docs/customers.md#customerscreateparams), [`update`](https://github.com/fellahealth/cashier/blob/main/docs/customers.md#customersupdatecustomerid-params)                                                            |
+| [Invoices](https://github.com/fellahealth/cashier/blob/main/docs/invoices.md)           | [`get`](https://github.com/fellahealth/cashier/blob/main/docs/invoices.md#invoicesgetinvoiceid), [`list`](https://github.com/fellahealth/cashier/blob/main/docs/invoices.md#invoiceslistparams), [`pay`](https://github.com/fellahealth/cashier/blob/main/docs/invoices.md#invoicespayinvoiceid-params), [`void`](https://github.com/fellahealth/cashier/blob/main/docs/invoices.md#invoicesvoidinvoiceid)                                                                             |
+| [Products](https://github.com/fellahealth/cashier/blob/main/docs/products.md)           | [`get`](https://github.com/fellahealth/cashier/blob/main/docs/products.md#productsgetproductid), [`list`](https://github.com/fellahealth/cashier/blob/main/docs/products.md#productslistparams)                                                                                                                                                                                                                                                                                        |
+| [Prices](https://github.com/fellahealth/cashier/blob/main/docs/prices.md)               | [`get`](https://github.com/fellahealth/cashier/blob/main/docs/prices.md#pricesgetpriceid), [`list`](https://github.com/fellahealth/cashier/blob/main/docs/prices.md#priceslistparams)                                                                                                                                                                                                                                                                                                  |
+| [Subscriptions](https://github.com/fellahealth/cashier/blob/main/docs/subscriptions.md) | [`create`](https://github.com/fellahealth/cashier/blob/main/docs/subscriptions.md#subscriptionscreateparams), [`get`](https://github.com/fellahealth/cashier/blob/main/docs/subscriptions.md#subscriptionsgetsubscriptionid), [`update`](https://github.com/fellahealth/cashier/blob/main/docs/subscriptions.md#subscriptionsupdatesubscriptionid-params), [`cancel`](https://github.com/fellahealth/cashier/blob/main/docs/subscriptions.md#subscriptionscancelsubscriptionid-params) |
 
 Guides:
 
-- [Drivers and conventions](docs/drivers.md): amounts, currencies, metadata, Recurly codes and pagination.
-- [Errors](docs/errors.md): every error class and how provider errors are mapped.
-- [Dependency injection](docs/dependency-injection.md): NestJS, plain classes and testing.
+- [Drivers and conventions](https://github.com/fellahealth/cashier/blob/main/docs/drivers.md): amounts, currencies, metadata, Recurly codes and pagination.
+- [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class and how provider errors are mapped.
+- [Dependency injection](https://github.com/fellahealth/cashier/blob/main/docs/dependency-injection.md): NestJS, plain classes and testing.
 
 ## Errors
 
-Every method rejects with a subclass of `CashierError`, such as `NotFoundError`, `PaymentFailedError` or `RateLimitError`. Each error has a `code`, the `provider`, the provider's HTTP status and error code, and the original error as `cause`. See [Errors](docs/errors.md) for the full list.
+Every method rejects with a subclass of `CashierError`, such as `NotFoundError`, `PaymentFailedError` or `RateLimitError`. Each error has a `code`, the `provider`, the provider's HTTP status and error code, and the original error as `cause`. See [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md) for the full list.
 
 ```ts
 import { NotFoundError } from '@aios-medical/cashier';
@@ -106,12 +106,12 @@ Register a `Cashier` instance as a provider and inject it:
 export class BillingModule {}
 ```
 
-See [Dependency injection](docs/dependency-injection.md) for a full service example and how to fake it in tests.
+See [Dependency injection](https://github.com/fellahealth/cashier/blob/main/docs/dependency-injection.md) for a full service example and how to fake it in tests.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). To report a security issue, see [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](https://github.com/fellahealth/cashier/blob/main/CONTRIBUTING.md). To report a security issue, see [SECURITY.md](https://github.com/fellahealth/cashier/blob/main/SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © AIOS
+[MIT](https://github.com/fellahealth/cashier/blob/main/LICENSE) © AIOS
