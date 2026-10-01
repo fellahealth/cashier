@@ -1,7 +1,12 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "@aios-medical/cashier": ["./packages/cashier/src/index.ts"]
+    }
   },
   "include": ["packages/*/src", "packages/*/tests", "packages/*/*.ts"]
 }
