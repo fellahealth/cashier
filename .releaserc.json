@@ -6,7 +6,12 @@
       "@semantic-release/commit-analyzer",
       {
         "preset": "conventionalcommits",
-        "releaseRules": [{ "type": "docs", "release": "patch" }]
+        "releaseRules": [
+          {
+            "type": "docs",
+            "release": "patch"
+          }
+        ]
       }
     ],
     [
@@ -15,22 +20,62 @@
         "preset": "conventionalcommits",
         "presetConfig": {
           "types": [
-            { "type": "feat", "section": "Features" },
-            { "type": "fix", "section": "Bug Fixes" },
-            { "type": "perf", "section": "Performance Improvements" },
-            { "type": "revert", "section": "Reverts" },
-            { "type": "docs", "section": "Documentation" },
-            { "type": "chore", "hidden": true },
-            { "type": "ci", "hidden": true },
-            { "type": "build", "hidden": true },
-            { "type": "test", "hidden": true },
-            { "type": "refactor", "hidden": true },
-            { "type": "style", "hidden": true }
+            {
+              "type": "feat",
+              "section": "Features"
+            },
+            {
+              "type": "fix",
+              "section": "Bug Fixes"
+            },
+            {
+              "type": "perf",
+              "section": "Performance Improvements"
+            },
+            {
+              "type": "revert",
+              "section": "Reverts"
+            },
+            {
+              "type": "docs",
+              "section": "Documentation"
+            },
+            {
+              "type": "chore",
+              "hidden": true
+            },
+            {
+              "type": "ci",
+              "hidden": true
+            },
+            {
+              "type": "build",
+              "hidden": true
+            },
+            {
+              "type": "test",
+              "hidden": true
+            },
+            {
+              "type": "refactor",
+              "hidden": true
+            },
+            {
+              "type": "style",
+              "hidden": true
+            }
           ]
         }
       }
     ],
-    "@semantic-release/npm",
+    [
+      "@semantic-release/exec",
+      {
+        "verifyConditionsCmd": "npm whoami",
+        "prepareCmd": "npm version ${nextRelease.version} --workspaces --no-git-tag-version --allow-same-version",
+        "publishCmd": "npm publish --workspaces --access public --provenance"
+      }
+    ],
     "@semantic-release/github"
   ]
 }
