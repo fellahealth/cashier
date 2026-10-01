@@ -19,6 +19,15 @@ export interface CashierProviderOptions {
   recurly: RecurlyOptions;
 }
 
+export type CashierProvidersConfig = {
+  [Provider in CashierProvider]?: CashierProviderOptions[Provider];
+};
+
+export interface CashierConfig {
+  default?: CashierProvider;
+  providers?: CashierProvidersConfig;
+}
+
 export interface CashierDriver {
   readonly provider: CashierProvider;
   readonly customers: CustomersResource;

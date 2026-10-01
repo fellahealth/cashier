@@ -4,6 +4,8 @@ export const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2023-08-16';
 
 export const DEFAULT_LIST_LIMIT = 100;
 
+export const DRIVER_CACHE_SIZE = 100;
+
 export const STRIPE_PAYMENT_METHOD_ERROR_CODES: ReadonlySet<string> = new Set([
   'expired_card',
   'incorrect_cvc',
