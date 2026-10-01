@@ -5,9 +5,9 @@
 
 Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS and Express support. Stripe and Recurly are supported today.
 
-Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set of methods and types. Your code asks for a driver, calls `driver.subscriptions.create(...)`, and gets back the same `Subscription` shape whichever provider is behind it. Provider errors are turned into a small set of typed errors, so you can handle a declined card or a missing customer the same way on both.
+Cashier puts payment providers behind one set of methods and types. Your code asks for a driver, calls `driver.subscriptions.create(...)`, and gets back the same `Subscription` shape whichever provider is behind it. Each provider is a driver, so new providers can be added without changing your code. Provider errors are turned into a small set of typed errors, so you can handle a declined card or a missing customer the same way everywhere.
 
-- One interface for Stripe and Recurly, so you can switch providers or run both.
+- One interface for every provider, so you can switch providers or run several side by side.
 - Consistent results: amounts in minor units (cents), uppercase ISO 4217 currency codes, `Date` objects for timestamps.
 - Typed errors such as `NotFoundError`, `PaymentFailedError` and `RateLimitError`, with the original provider error kept as `cause`.
 - Works from CommonJS and ES modules, with TypeScript types included.
@@ -25,13 +25,22 @@ Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set
 
 All packages are released together with the same version.
 
+## Providers
+
+| Provider | Driver name | SDK (peer dependency)                                             |
+| -------- | ----------- | ----------------------------------------------------------------- |
+| Stripe   | `'stripe'`  | [`stripe`](https://www.npmjs.com/package/stripe) v13              |
+| Recurly  | `'recurly'` | [`recurly`](https://www.npmjs.com/package/recurly) v4.67 or later |
+
+Want another provider? A driver is a self-contained folder that maps the provider's SDK to Cashier's types. See [Adding a driver](https://github.com/fellahealth/cashier/blob/main/CONTRIBUTING.md#adding-a-driver).
+
 ## Install
 
 ```bash
 npm install @aios-medical/cashier stripe recurly
 ```
 
-`stripe` (v13) and `recurly` (v4.67 or later) are peer dependencies. Install both, since Cashier loads both clients. Node.js 20 or later is required.
+Each driver uses its provider's official SDK, installed as a peer dependency. Install the SDKs of every provider in the table above, since Cashier currently loads all of them. Node.js 20 or later is required.
 
 ## Quick start
 

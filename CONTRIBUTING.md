@@ -46,6 +46,23 @@ Documentation for every package lives in `docs/` at the root. The root `README.m
 
 In the repository, the NestJS and Express packages use the source of `@aios-medical/cashier` directly, through the TypeScript `paths` and Jest `moduleNameMapper` settings. Their peer dependency on `@aios-medical/cashier` is set to the release version when a release is published.
 
+## Adding a driver
+
+Each provider is a driver in `packages/cashier/src/drivers/<provider>/`. The Stripe and Recurly drivers are the reference: copy the structure of the one closest to your provider.
+
+1. Add the provider name to `CashierProvider` and its options to `CashierProviderOptions` in `packages/cashier/src/types/cashier.types.ts`.
+2. Create the driver folder:
+   - `<provider>.driver.ts`: a class that implements `CashierDriver` and creates the five resources.
+   - `resources/`: one class per resource, implementing `CustomersResource`, `InvoicesResource`, `ProductsResource`, `PricesResource` and `SubscriptionsResource`.
+   - `mappers/`: functions that turn the provider's objects into Cashier's `Customer`, `Invoice`, `Product`, `Price` and `Subscription`.
+   - `<provider>-error.mapper.ts` and `<provider>-request.ts`: map every provider error to a `CashierError` subclass, and wrap every call with that mapping.
+3. Register the driver in `createDriver` in `packages/cashier/src/drivers/create-driver.ts`.
+4. Add the provider's official SDK to `peerDependencies` in `packages/cashier/package.json`, and to `devDependencies` in the root `package.json`.
+5. Add tests in `packages/cashier/tests/<provider>/` with a mocked SDK client, like the existing `tests/fixtures/*-client.mock.ts`. No network access or real API keys.
+6. Document it: add a column for the provider to each resource page in `docs/`, the error mapping in `docs/errors.md`, and a row to the Providers table in `README.md`.
+
+When the provider has no equivalent for a method, reject with `UnsupportedOperationError`, as the Recurly driver does for prices. Follow the conventions in [Drivers and conventions](docs/drivers.md#conventions): amounts in minor units, uppercase currency codes, `Date` timestamps, and `status: 'unknown'` for states Cashier does not know.
+
 ## Guidelines
 
 - Keep the public API the same for every provider. When a provider cannot support an operation, reject with `UnsupportedOperationError`.
