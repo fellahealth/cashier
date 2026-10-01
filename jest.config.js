@@ -1,7 +1,7 @@
 module.exports = {
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
-  testMatch: ['**/*.spec.ts'],
+  roots: ['<rootDir>/packages'],
+  testMatch: ['**/tests/**/*.spec.ts'],
   transform: {
     '^.+\\.ts$': [
       '@swc/jest',
@@ -14,6 +14,6 @@ module.exports = {
       },
     ],
   },
-  collectCoverageFrom: ['src/**/*.ts'],
+  collectCoverageFrom: ['packages/*/src/**/*.ts'],
   coverageDirectory: 'coverage',
 };
