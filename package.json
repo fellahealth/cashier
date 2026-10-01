@@ -1,5 +1,5 @@
 {
-  "name": "cashier-monorepo",
+  "name": "aios-cashier",
   "private": true,
   "description": "Monorepo for @aios-medical/cashier and its framework integrations.",
   "license": "MIT",
