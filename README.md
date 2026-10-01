@@ -32,8 +32,6 @@ All packages are released together with the same version.
 | Stripe   | `'stripe'`  | [`stripe`](https://www.npmjs.com/package/stripe) v13              |
 | Recurly  | `'recurly'` | [`recurly`](https://www.npmjs.com/package/recurly) v4.67 or later |
 
-Want another provider? A driver is a self-contained folder that maps the provider's SDK to Cashier's types. See [Adding a driver](https://github.com/fellahealth/cashier/blob/main/CONTRIBUTING.md#adding-a-driver).
-
 ## Install
 
 ```bash
