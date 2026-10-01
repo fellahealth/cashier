@@ -12,7 +12,7 @@ Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set
 - Typed errors such as `NotFoundError`, `PaymentFailedError` and `RateLimitError`, with the original provider error kept as `cause`.
 - Works from CommonJS and ES modules, with TypeScript types included.
 - First-class NestJS (`CashierModule.forRoot`, injectable `CashierService`) and Express (`req.cashier`, error handler) packages.
-- Switch providers with one config value, or pass a different API key per tenant.
+- Switch providers with one config value, or use other credentials at runtime.
 - No runtime dependencies besides the provider clients you install yourself.
 
 ## Packages
@@ -75,9 +75,9 @@ try {
 | ----------------------------------- | ---------------------------------------------------------------- |
 | `cashier.use()`                     | The `default` provider. Switch providers by changing the config. |
 | `cashier.use('recurly')`            | A provider from `providers`.                                     |
-| `cashier.use('stripe', { apiKey })` | Any API key, for example one per tenant.                         |
+| `cashier.use('stripe', { apiKey })` | Other credentials, given at runtime.                             |
 
-Drivers are created once and reused, so calling `use` on every request is cheap. See [API keys and providers](https://github.com/fellahealth/cashier/blob/main/docs/api-keys.md).
+Drivers are created once and reused, so calling `use` on every request is cheap. See [TypeScript](https://github.com/fellahealth/cashier/blob/main/docs/typescript.md#use-different-credentials-at-runtime).
 
 ## Use with
 
@@ -156,7 +156,6 @@ Guides:
 - [Drivers and conventions](https://github.com/fellahealth/cashier/blob/main/docs/drivers.md): amounts, currencies, metadata, Recurly codes and pagination.
 - [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class, how provider errors are mapped, and the HTTP responses.
 - [TypeScript](https://github.com/fellahealth/cashier/blob/main/docs/typescript.md), [NestJS](https://github.com/fellahealth/cashier/blob/main/docs/nestjs.md) and [Express](https://github.com/fellahealth/cashier/blob/main/docs/express.md): setup and testing for each.
-- [API keys and providers](https://github.com/fellahealth/cashier/blob/main/docs/api-keys.md): one default provider, several providers, or a key per tenant.
 
 ## Errors
 

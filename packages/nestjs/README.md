@@ -56,12 +56,11 @@ export class BillingService {
 | ----------------------------------- | ---------------------------------------------------------------- |
 | `cashier.use()`                     | The `default` provider. Switch providers by changing the config. |
 | `cashier.use('recurly')`            | A provider from `providers`.                                     |
-| `cashier.use('stripe', { apiKey })` | Any API key, for example one per tenant.                         |
+| `cashier.use('stripe', { apiKey })` | Other credentials, given at runtime.                             |
 
 ## Documentation
 
 - [NestJS guide](https://github.com/fellahealth/cashier/blob/main/docs/nestjs.md): every option, the exception filter and testing.
-- [API keys and providers](https://github.com/fellahealth/cashier/blob/main/docs/api-keys.md): one default provider, several providers, or a key per tenant.
 - [API reference](https://github.com/fellahealth/cashier/blob/main/docs/README.md): customers, invoices, products, prices and subscriptions.
 - [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class and the HTTP responses.
 

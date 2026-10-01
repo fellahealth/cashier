@@ -4,10 +4,9 @@ Start with the [main README](../README.md) for installation and a quick start. T
 
 ## Guides
 
-- [TypeScript](typescript.md): creating a Cashier, `use()`, passing it to your classes and testing.
+- [TypeScript](typescript.md): creating a Cashier, `use()`, credentials at runtime, passing it to your classes and testing.
 - [NestJS](nestjs.md): `CashierModule.forRoot` and `forRootAsync`, `CashierService`, the exception filter and testing.
 - [Express](express.md): `req.cashier`, the error handler and testing.
-- [API keys and providers](api-keys.md): one default provider, several providers, or a key per tenant.
 - [Drivers and conventions](drivers.md): what a driver has, amounts, currencies, metadata, ids and pagination.
 - [Errors](errors.md): every error class, how provider errors are mapped, and the HTTP responses.
 

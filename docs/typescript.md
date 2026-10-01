@@ -45,15 +45,15 @@ await cashier.use().subscriptions.create({
 await cashier.use('recurly').invoices.list({ customer: 'code-customer-42' });
 
 await cashier
-  .use('stripe', { apiKey: tenant.stripeApiKey })
+  .use('stripe', { apiKey: otherStripeKey })
   .customers.get('cus_456');
 ```
 
-| Call                        | Returns                                               |
-| --------------------------- | ----------------------------------------------------- |
-| `use()`                     | The driver for the `default` provider.                |
-| `use('recurly')`            | The driver for a provider in `providers`.             |
-| `use('stripe', { apiKey })` | A driver for any API key, for example one per tenant. |
+| Call                        | Returns                                     |
+| --------------------------- | ------------------------------------------- |
+| `use()`                     | The driver for the `default` provider.      |
+| `use('recurly')`            | The driver for a provider in `providers`.   |
+| `use('stripe', { apiKey })` | A driver with credentials given at runtime. |
 
 `cashier.defaultProvider` tells you which provider `use()` returns, or `null` when there is no default.
 
@@ -63,7 +63,22 @@ await cashier
 | `use('recurly')` when Recurly is not in `providers` | `ValidationError`     |
 | `use('stripe', { apiKey: '' })`                     | `AuthenticationError` |
 
-You can call `use` on every request. Cashier keeps the drivers it creates and returns the same one for the same provider and API key. See [API keys and providers](api-keys.md) for details.
+You can call `use` on every request. Cashier keeps the drivers it creates and returns the same one for the same provider and API key.
+
+## Use different credentials at runtime
+
+The keys in `providers` are the defaults. Pass options to `use` to call a provider with other credentials, known only at runtime:
+
+```ts
+const apiKey = await loadStripeKey();
+
+await cashier.use('stripe', { apiKey }).customers.get('cus_456');
+```
+
+- The options replace the configured credentials for that call only. `use()` and `use('stripe')` keep using the configured ones.
+- The provider does not need to be in `providers`.
+- The same provider and API key always return the same driver, so the Stripe or Recurly client is created once. Up to 100 drivers are kept, and the least recently used one is dropped first.
+- Drivers are looked up by a SHA-256 hash of the API key, so keys never appear in cache keys, logs or error messages.
 
 ## The shared instance
 

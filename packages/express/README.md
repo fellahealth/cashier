@@ -42,7 +42,6 @@ A missing invoice then answers `404 { "code": "not_found", "message": "..." }`, 
 ## Documentation
 
 - [Express guide](https://github.com/fellahealth/cashier/blob/main/docs/express.md): the middleware, the error handler, Express 4 and testing.
-- [API keys and providers](https://github.com/fellahealth/cashier/blob/main/docs/api-keys.md): one default provider, several providers, or a key per tenant.
 - [API reference](https://github.com/fellahealth/cashier/blob/main/docs/README.md): customers, invoices, products, prices and subscriptions.
 - [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class and the HTTP responses.
 

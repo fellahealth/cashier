@@ -92,7 +92,7 @@ export class BillingService {
 
 - `use()` uses the default provider, so switching providers is a config change.
 - `use('recurly')` picks a configured provider for this call.
-- `use('stripe', { apiKey })` uses any key, for example one per tenant. See [API keys and providers](api-keys.md).
+- `use('stripe', { apiKey })` uses other credentials, given at runtime. See [TypeScript](typescript.md#use-different-credentials-at-runtime).
 
 ## Turn Cashier errors into HTTP responses
 

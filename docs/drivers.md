@@ -13,7 +13,7 @@ const cashier = createCashier({
 const driver = cashier.use();
 ```
 
-`use()` returns a `CashierDriver` for the default provider, `use('recurly')` for a configured provider, and `use('stripe', { apiKey })` for any API key. Drivers are created once and reused. See [TypeScript](typescript.md) for every option and [API keys and providers](api-keys.md) for choosing between them.
+`use()` returns a `CashierDriver` for the default provider, `use('recurly')` for a configured provider, and `use('stripe', { apiKey })` for credentials given at runtime. Drivers are created once and reused. See [TypeScript](typescript.md) for every option.
 
 On Stripe the SDK is created with API version `2023-08-16`, the version the mappers are written for.
 
