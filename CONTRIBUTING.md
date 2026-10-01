@@ -30,9 +30,11 @@ Run every script from the repository root. Run `npm run format:check && npm run 
 
 The repository is an npm workspaces monorepo. Every folder in `packages/` is published to npm as its own package.
 
-| Folder             | npm package             | Contents                     |
-| ------------------ | ----------------------- | ---------------------------- |
-| `packages/cashier` | `@aios-medical/cashier` | The core library and drivers |
+| Folder             | npm package                     | Contents                                             |
+| ------------------ | ------------------------------- | ---------------------------------------------------- |
+| `packages/cashier` | `@aios-medical/cashier`         | The core library and drivers                         |
+| `packages/nestjs`  | `@aios-medical/cashier-nestjs`  | NestJS module, `CashierService` and exception filter |
+| `packages/express` | `@aios-medical/cashier-express` | Express middleware and error handler                 |
 
 Inside a package:
 
@@ -40,7 +42,9 @@ Inside a package:
 - `tests/` mirrors `src/` and uses mocked provider clients, so no network access or API keys are needed.
 - `package.json`, `tsconfig.json` and `tsup.config.ts` hold the package's own settings. Linting, formatting, testing and the shared TypeScript options live at the root.
 
-Documentation for every package lives in `docs/` at the root. The root `README.md`, `LICENSE` and `CHANGELOG.md` are copied into `packages/cashier` when it is packed, so do not edit the copies.
+Documentation for every package lives in `docs/` at the root. The root `README.md` is the npm page of `@aios-medical/cashier`, and the other packages have their own `README.md`. The root `LICENSE` and `CHANGELOG.md` (and the root `README.md` for `packages/cashier`) are copied into each package when it is packed, so do not edit the copies.
+
+In the repository, the NestJS and Express packages use the source of `@aios-medical/cashier` directly, through the TypeScript `paths` and Jest `moduleNameMapper` settings. Their peer dependency on `@aios-medical/cashier` is set to the release version when a release is published.
 
 ## Guidelines
 

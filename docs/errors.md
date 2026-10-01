@@ -76,3 +76,37 @@ try {
 | `ConflictError`             | Idempotency error, `lock_timeout`, HTTP 409                                             | `simultaneous_request`, `precondition_failed`, HTTP 409 and 412                                |
 | `UnsupportedOperationError` |                                                                                         | `missing_feature`, and every Recurly `prices` method                                           |
 | `ProviderError`             | API and connection errors, anything else                                                | Server and network errors, anything else                                                       |
+
+## HTTP responses
+
+`toHttpError(error)` turns a Cashier error into an HTTP status and a JSON body you can send to your API clients. The [NestJS exception filter](nestjs.md#turn-cashier-errors-into-http-responses) and the [Express error handler](express.md#error-responses) use it, so every framework answers the same way.
+
+```ts
+import { CashierError, toHttpError } from '@aios-medical/cashier';
+
+if (error instanceof CashierError) {
+  const { status, body } = toHttpError(error);
+
+  return reply.status(status).send(body);
+}
+```
+
+| Error                       | Status | Body `message`                        |
+| --------------------------- | ------ | ------------------------------------- |
+| `NotFoundError`             | 404    | The error message                     |
+| `ValidationError`           | 422    | The error message                     |
+| `PaymentFailedError`        | 402    | The error message, plus `declineCode` |
+| `PaymentMethodError`        | 402    | The error message                     |
+| `SubscriptionError`         | 409    | The error message                     |
+| `ConflictError`             | 409    | The error message                     |
+| `RateLimitError`            | 429    | The error message                     |
+| `UnsupportedOperationError` | 501    | The error message                     |
+| `AuthenticationError`       | 500    | `The billing provider request failed` |
+| `AuthorizationError`        | 500    | `The billing provider request failed` |
+| `ProviderError`             | 502    | `The billing provider request failed` |
+
+The body is `{ code, message }`, with `declineCode` added for declined payments when the provider sends one.
+
+`AuthenticationError` and `AuthorizationError` mean your own API key is wrong or lacks permissions. That is a server problem, not the caller's, so they answer 500. For these and for `ProviderError`, the provider's message is replaced with a generic one, so details about your keys or the provider never reach your API clients. Log `error.message` and `error.cause` on your side.
+
+`getHttpStatus(error)` returns only the status.
