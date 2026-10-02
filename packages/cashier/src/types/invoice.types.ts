@@ -1,4 +1,5 @@
 import { CashierProvider } from './cashier.types';
+import { CursorPaginateParams, CursorPaginator } from './pagination.types';
 
 export type InvoiceStatus =
   | 'draft'
@@ -22,7 +23,11 @@ export interface Invoice {
   subtotal: number;
   tax: number;
   total: number;
+  amountRefunded: number;
+  attemptCount: number;
+  hostedInvoiceUrl: string | null;
   createdAt: Date;
+  dueDate: Date | null;
   paidAt: Date | null;
   provider: CashierProvider;
 }
@@ -33,6 +38,10 @@ export interface ListInvoicesParams {
   limit?: number;
 }
 
+export interface CursorPaginateInvoicesParams extends CursorPaginateParams {
+  status?: 'paid';
+}
+
 export interface PayInvoiceParams {
   paymentMethod?: string;
 }
@@ -40,6 +49,9 @@ export interface PayInvoiceParams {
 export interface InvoicesResource {
   get(invoiceId: string): Promise<Invoice>;
   list(params: ListInvoicesParams): Promise<Invoice[]>;
+  cursorPaginate(
+    params: CursorPaginateInvoicesParams,
+  ): Promise<CursorPaginator<Invoice>>;
   pay(invoiceId: string, params?: PayInvoiceParams): Promise<Invoice>;
   void(invoiceId: string): Promise<Invoice>;
 }

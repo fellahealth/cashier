@@ -28,6 +28,7 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.retrieve).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
+        { expand: ['charge'] },
       );
       expect(invoice).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES[0]);
     });
@@ -61,6 +62,7 @@ describe('StripeInvoicesResource', () => {
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 100,
         status: 'paid',
+        expand: ['data.charge'],
       });
     });
 
@@ -72,6 +74,7 @@ describe('StripeInvoicesResource', () => {
       expect(client.invoices.list).toHaveBeenCalledWith({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 10,
+        expand: ['data.charge'],
       });
     });
 
@@ -85,6 +88,94 @@ describe('StripeInvoicesResource', () => {
       });
 
       expect(result).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES);
+    });
+
+    it('should count no refund when the charge is not expanded and no hosted url when it is missing', async () => {
+      client.invoices.list.mockResolvedValue({
+        data: [
+          {
+            ...STRIPE_FIXTURES.SUBSCRIPTION_INVOICE,
+            charge: 'ch_123',
+            hosted_invoice_url: undefined,
+          },
+        ],
+      });
+
+      const [invoice] = await invoices.list({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+      });
+
+      expect(invoice).toMatchObject({
+        amountRefunded: 0,
+        hostedInvoiceUrl: null,
+      });
+    });
+  });
+
+  describe('cursorPaginate', () => {
+    it('should request the first page with the status filter', async () => {
+      client.invoices.list.mockResolvedValue({
+        data: STRIPE_FIXTURES.INVOICES,
+        has_more: true,
+      });
+
+      const page = await invoices.cursorPaginate({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        status: 'paid',
+        perPage: 2,
+      });
+
+      expect(client.invoices.list).toHaveBeenCalledWith({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        limit: 2,
+        status: 'paid',
+        expand: ['data.charge'],
+      });
+      expect(page).toEqual({
+        data: STRIPE_FIXTURES.EXPECTED_INVOICES,
+        perPage: 2,
+        hasMorePages: true,
+        nextCursor: 'in_456',
+      });
+    });
+
+    it('should request the page after the cursor', async () => {
+      client.invoices.list.mockResolvedValue({
+        data: [STRIPE_FIXTURES.SUBSCRIPTION_INVOICE],
+        has_more: true,
+      });
+
+      const page = await invoices.cursorPaginate({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        perPage: 1,
+        cursor: 'in_000',
+      });
+
+      expect(client.invoices.list).toHaveBeenCalledWith({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        limit: 1,
+        starting_after: 'in_000',
+        expand: ['data.charge'],
+      });
+      expect(page.nextCursor).toBe(STRIPE_FIXTURES.INVOICE_ID);
+    });
+
+    it('should return no next cursor on the last page', async () => {
+      client.invoices.list.mockResolvedValue({
+        data: [STRIPE_FIXTURES.SUBSCRIPTION_INVOICE],
+        has_more: false,
+      });
+
+      const page = await invoices.cursorPaginate({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+      });
+
+      expect(page).toEqual({
+        data: [STRIPE_FIXTURES.EXPECTED_INVOICES[0]],
+        perPage: 100,
+        hasMorePages: false,
+        nextCursor: null,
+      });
     });
   });
 
@@ -100,7 +191,10 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.pay).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
-        { payment_method: STRIPE_FIXTURES.PAYMENT_METHOD_ID },
+        {
+          payment_method: STRIPE_FIXTURES.PAYMENT_METHOD_ID,
+          expand: ['charge'],
+        },
       );
       expect(invoice).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES[0]);
     });
@@ -114,7 +208,7 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.pay).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
-        {},
+        { expand: ['charge'] },
       );
     });
   });
@@ -129,6 +223,7 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.voidInvoice).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
+        { expand: ['charge'] },
       );
       expect(invoice).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES[0]);
     });

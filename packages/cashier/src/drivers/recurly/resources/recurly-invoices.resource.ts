@@ -1,12 +1,15 @@
 import * as recurly from 'recurly';
 import {
+  CursorPaginateInvoicesParams,
   Invoice,
   InvoicesResource,
   ListInvoicesParams,
   PayInvoiceParams,
 } from '../../../types/invoice.types';
+import { CursorPaginator } from '../../../types/pagination.types';
 import { DEFAULT_LIST_LIMIT } from '../../../constants/cashier.constants';
 import { mapRecurlyInvoice } from '../mappers/recurly-invoice.mapper';
+import { readRecurlyItems, readRecurlyPage } from '../recurly-page';
 import { recurlyRequest } from '../recurly-request';
 
 export class RecurlyInvoicesResource implements InvoicesResource {
@@ -23,20 +26,30 @@ export class RecurlyInvoicesResource implements InvoicesResource {
     status,
     limit = DEFAULT_LIST_LIMIT,
   }: ListInvoicesParams): Promise<Invoice[]> {
+    return recurlyRequest(async () =>
+      (
+        await readRecurlyItems(this.invoices(customer, limit, status), limit)
+      ).map(mapRecurlyInvoice),
+    );
+  }
+
+  cursorPaginate({
+    customer,
+    status,
+    perPage = DEFAULT_LIST_LIMIT,
+    cursor,
+  }: CursorPaginateInvoicesParams): Promise<CursorPaginator<Invoice>> {
     return recurlyRequest(async () => {
-      const pager = this.client.listAccountInvoices(customer, {
-        params: { limit, ...(status ? { state: status } : {}) },
-      });
+      const page = await readRecurlyPage(
+        this.invoices(customer, perPage, status, cursor),
+      );
 
-      const invoices: Invoice[] = [];
-
-      for await (const invoice of pager.each()) {
-        invoices.push(mapRecurlyInvoice(invoice));
-
-        if (invoices.length >= limit) break;
-      }
-
-      return invoices;
+      return {
+        data: page.items.map(mapRecurlyInvoice),
+        perPage,
+        hasMorePages: page.hasMorePages,
+        nextCursor: page.nextCursor,
+      };
     });
   }
 
@@ -57,5 +70,20 @@ export class RecurlyInvoicesResource implements InvoicesResource {
     return recurlyRequest(async () =>
       mapRecurlyInvoice(await this.client.voidInvoice(invoiceId)),
     );
+  }
+
+  private invoices(
+    customer: string,
+    limit: number,
+    status?: 'paid',
+    cursor?: string | null,
+  ): recurly.Pager<recurly.Invoice> {
+    return this.client.listAccountInvoices(customer, {
+      params: {
+        limit,
+        ...(status ? { state: status } : {}),
+        ...(cursor ? { cursor } : {}),
+      },
+    });
   }
 }

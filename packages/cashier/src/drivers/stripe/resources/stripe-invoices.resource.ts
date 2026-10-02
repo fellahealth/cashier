@@ -1,12 +1,19 @@
 import Stripe from 'stripe';
 import {
+  CursorPaginateInvoicesParams,
   Invoice,
   InvoicesResource,
   ListInvoicesParams,
   PayInvoiceParams,
 } from '../../../types/invoice.types';
-import { DEFAULT_LIST_LIMIT } from '../../../constants/cashier.constants';
+import { CursorPaginator } from '../../../types/pagination.types';
+import {
+  DEFAULT_LIST_LIMIT,
+  STRIPE_INVOICE_EXPAND,
+  STRIPE_INVOICE_LIST_EXPAND,
+} from '../../../constants/cashier.constants';
 import { mapStripeInvoice } from '../mappers/stripe-invoice.mapper';
+import { toStripeCursorPaginator } from '../mappers/stripe-mapper.utils';
 import { stripeRequest } from '../stripe-request';
 
 export class StripeInvoicesResource implements InvoicesResource {
@@ -14,40 +21,80 @@ export class StripeInvoicesResource implements InvoicesResource {
 
   get(invoiceId: string): Promise<Invoice> {
     return stripeRequest(async () =>
-      mapStripeInvoice(await this.client.invoices.retrieve(invoiceId)),
+      mapStripeInvoice(
+        await this.client.invoices.retrieve(invoiceId, {
+          expand: STRIPE_INVOICE_EXPAND,
+        }),
+      ),
     );
   }
 
-  list({
+  async list({
     customer,
     status,
     limit = DEFAULT_LIST_LIMIT,
   }: ListInvoicesParams): Promise<Invoice[]> {
-    return stripeRequest(async () => {
-      const response = await this.client.invoices.list({
-        customer,
+    return (
+      await this.fetch(
+        { customer, limit, ...(status ? { status } : {}) },
         limit,
-        ...(status ? { status } : {}),
-      });
+      )
+    ).data;
+  }
 
-      return response.data.map(mapStripeInvoice);
-    });
+  cursorPaginate({
+    customer,
+    status,
+    perPage = DEFAULT_LIST_LIMIT,
+    cursor,
+  }: CursorPaginateInvoicesParams): Promise<CursorPaginator<Invoice>> {
+    return this.fetch(
+      {
+        customer,
+        limit: perPage,
+        ...(status ? { status } : {}),
+        ...(cursor ? { starting_after: cursor } : {}),
+      },
+      perPage,
+    );
   }
 
   pay(invoiceId: string, params: PayInvoiceParams = {}): Promise<Invoice> {
     return stripeRequest(async () =>
       mapStripeInvoice(
-        await this.client.invoices.pay(
-          invoiceId,
-          params.paymentMethod ? { payment_method: params.paymentMethod } : {},
-        ),
+        await this.client.invoices.pay(invoiceId, {
+          ...(params.paymentMethod
+            ? { payment_method: params.paymentMethod }
+            : {}),
+          expand: STRIPE_INVOICE_EXPAND,
+        }),
       ),
     );
   }
 
   void(invoiceId: string): Promise<Invoice> {
     return stripeRequest(async () =>
-      mapStripeInvoice(await this.client.invoices.voidInvoice(invoiceId)),
+      mapStripeInvoice(
+        await this.client.invoices.voidInvoice(invoiceId, {
+          expand: STRIPE_INVOICE_EXPAND,
+        }),
+      ),
+    );
+  }
+
+  private fetch(
+    params: Stripe.InvoiceListParams,
+    perPage: number,
+  ): Promise<CursorPaginator<Invoice>> {
+    return stripeRequest(async () =>
+      toStripeCursorPaginator(
+        await this.client.invoices.list({
+          ...params,
+          expand: STRIPE_INVOICE_LIST_EXPAND,
+        }),
+        perPage,
+        mapStripeInvoice,
+      ),
     );
   }
 }

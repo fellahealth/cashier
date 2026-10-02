@@ -67,6 +67,27 @@ Every `list` method takes an optional `limit`, which defaults to `100`.
 | Stripe   | Returns a single page of up to `limit` results. Stripe accepts at most 100.   |
 | Recurly  | Reads pages until `limit` results are collected. Recurly accepts at most 200. |
 
+`payments` and `invoices` also have `cursorPaginate`, which returns one page at a time:
+
+```ts
+const page = await driver.payments.cursorPaginate({
+  customer: 'cus_123',
+  perPage: 25,
+  cursor: req.query.cursor,
+});
+```
+
+It takes `perPage` (defaults to `100`) and `cursor`, and returns a `CursorPaginator`:
+
+| Field          | Type             | Description                                                   |
+| -------------- | ---------------- | ------------------------------------------------------------- |
+| `data`         | `Item[]`         | The items on this page.                                       |
+| `perPage`      | `number`         | The page size that was requested.                             |
+| `hasMorePages` | `boolean`        | Whether there is a next page.                                 |
+| `nextCursor`   | `string \| null` | Pass it as `cursor` to get the next page. `null` on the last. |
+
+The cursor is opaque. On Stripe it is the id of the page's last item, and on Recurly it is Recurly's own cursor, so always pass back the `nextCursor` you received instead of building one. The result is plain JSON, so an API can return it as is and the client can send `nextCursor` back as a query parameter. There is no previous cursor, because Recurly cannot page backwards.
+
 ## TypeScript
 
-The package exports every type it uses: `CashierDriver`, `CashierProvider`, `CashierProviderOptions`, the resource interfaces (`CustomersResource`, `InvoicesResource`, `PaymentsResource`, `ProductsResource`, `PricesResource`, `SubscriptionsResource`), the result types (`Customer`, `Invoice`, `Payment`, `Product`, `Price`, `Subscription`) and the parameter types such as `CreateSubscriptionParams`.
+The package exports every type it uses: `CashierDriver`, `CashierProvider`, `CashierProviderOptions`, the resource interfaces (`CustomersResource`, `InvoicesResource`, `PaymentsResource`, `ProductsResource`, `PricesResource`, `SubscriptionsResource`), the result types (`Customer`, `Invoice`, `Payment`, `PaymentDispute`, `PaymentSubscription`, `Product`, `Price`, `Subscription`), `CursorPaginator` and the parameter types such as `CreateSubscriptionParams` and `CursorPaginateParams`.

@@ -5,6 +5,7 @@ import { ProviderError } from '../../src/errors/provider.error';
 import {
   RECURLY_FIXTURES,
   createFailingRecurlyPager,
+  createRecurlyPagePager,
   createRecurlyPager,
   withRecurlyStatus,
 } from '../fixtures/recurly.fixtures';
@@ -94,6 +95,29 @@ describe('RecurlyInvoicesResource', () => {
       expect(result).toEqual([RECURLY_FIXTURES.EXPECTED_ZERO_DECIMAL_INVOICE]);
     });
 
+    it.each([
+      [
+        'a credit invoice',
+        { type: 'credit', paid: 10, refundableAmount: null },
+      ],
+      [
+        'a charge invoice without a refundable amount',
+        { type: 'charge', paid: 10, refundableAmount: null },
+      ],
+    ])('should count no refund on %s', async (_case, overrides) => {
+      client.listAccountInvoices.mockReturnValue(
+        createRecurlyPager([
+          { ...RECURLY_FIXTURES.PAID_INVOICE, ...overrides },
+        ]),
+      );
+
+      const [invoice] = await invoices.list({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+      });
+
+      expect(invoice?.amountRefunded).toBe(0);
+    });
+
     it('should stop reading pages once the limit is reached', async () => {
       client.listAccountInvoices.mockReturnValue(
         createRecurlyPager(RECURLY_FIXTURES.INVOICES),
@@ -114,6 +138,81 @@ describe('RecurlyInvoicesResource', () => {
 
       await expect(
         invoices.list({ customer: RECURLY_FIXTURES.ACCOUNT_ID }),
+      ).rejects.toBeInstanceOf(ProviderError);
+    });
+  });
+
+  describe('cursorPaginate', () => {
+    it('should request the first page with the state filter and return the next cursor', async () => {
+      client.listAccountInvoices.mockReturnValue(
+        createRecurlyPagePager(
+          RECURLY_FIXTURES.INVOICES,
+          RECURLY_FIXTURES.NEXT_PATH,
+        ),
+      );
+
+      const page = await invoices.cursorPaginate({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        status: 'paid',
+        perPage: 2,
+      });
+
+      expect(client.listAccountInvoices).toHaveBeenCalledWith(
+        RECURLY_FIXTURES.ACCOUNT_ID,
+        { params: { limit: 2, state: 'paid' } },
+      );
+      expect(page).toEqual({
+        data: RECURLY_FIXTURES.EXPECTED_INVOICES,
+        perPage: 2,
+        hasMorePages: true,
+        nextCursor: RECURLY_FIXTURES.CURSOR,
+      });
+    });
+
+    it('should pass the cursor to Recurly', async () => {
+      client.listAccountInvoices.mockReturnValue(
+        createRecurlyPagePager(
+          [RECURLY_FIXTURES.PAID_INVOICE],
+          RECURLY_FIXTURES.NEXT_PATH,
+        ),
+      );
+
+      await invoices.cursorPaginate({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        perPage: 1,
+        cursor: RECURLY_FIXTURES.CURSOR,
+      });
+
+      expect(client.listAccountInvoices).toHaveBeenCalledWith(
+        RECURLY_FIXTURES.ACCOUNT_ID,
+        { params: { limit: 1, cursor: RECURLY_FIXTURES.CURSOR } },
+      );
+    });
+
+    it('should return no next cursor on the last page', async () => {
+      client.listAccountInvoices.mockReturnValue(
+        createRecurlyPagePager([RECURLY_FIXTURES.PAID_INVOICE]),
+      );
+
+      const page = await invoices.cursorPaginate({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+      });
+
+      expect(page).toEqual({
+        data: [RECURLY_FIXTURES.EXPECTED_INVOICES[0]],
+        perPage: 100,
+        hasMorePages: false,
+        nextCursor: null,
+      });
+    });
+
+    it('should map failures raised while paging', async () => {
+      client.listAccountInvoices.mockReturnValue(
+        createFailingRecurlyPager(new Error('Network down')),
+      );
+
+      await expect(
+        invoices.cursorPaginate({ customer: RECURLY_FIXTURES.ACCOUNT_ID }),
       ).rejects.toBeInstanceOf(ProviderError);
     });
   });

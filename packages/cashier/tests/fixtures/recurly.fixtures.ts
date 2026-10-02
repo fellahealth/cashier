@@ -10,8 +10,10 @@ const SUCCESSFUL_TRANSACTION = {
   id: 'rec_txn_1',
   account: { id: 'acct_1' },
   invoice: { id: 'rec_inv_1' },
+  subscriptionIds: ['rec_sub_1'],
   type: 'purchase',
   status: 'success',
+  refunded: true,
   currency: 'gbp',
   amount: 129,
   description: 'Wegovy 0.5mg',
@@ -22,13 +24,38 @@ const DECLINED_TRANSACTION = {
   id: 'rec_txn_2',
   account: { id: 'acct_1' },
   invoice: null,
+  subscriptionIds: [],
   type: 'purchase',
   status: 'declined',
+  refunded: false,
   currency: 'jpy',
   amount: 5000,
   description: null,
   createdAt: new Date('2026-01-02T00:00:00Z'),
 } as recurly.Transaction;
+
+const createRefund = (
+  id: string,
+  originalTransactionId: string,
+  status: string,
+  amount: number,
+) =>
+  ({
+    id,
+    originalTransactionId,
+    type: 'refund',
+    status,
+    currency: 'gbp',
+    amount,
+    createdAt: new Date('2026-01-05T00:00:00Z'),
+  }) as recurly.Transaction;
+
+const REFUNDS = [
+  createRefund('rec_txn_3', 'rec_txn_1', 'success', 40),
+  createRefund('rec_txn_4', 'rec_txn_1', 'pending', 5.5),
+  createRefund('rec_txn_5', 'rec_txn_1', 'declined', 10),
+  createRefund('rec_txn_6', 'rec_txn_9', 'success', 20),
+];
 
 const PAID_INVOICE = {
   id: 'rec_inv_1',
@@ -36,12 +63,16 @@ const PAID_INVOICE = {
   account: { id: 'acct_1' },
   subscriptionIds: ['rec_sub_1'],
   origin: 'renewal',
+  type: 'charge',
   state: 'paid',
   currency: 'usd',
   subtotal: 149.99,
   tax: 0,
   total: 149.99,
+  paid: 149.99,
+  refundableAmount: 100,
   createdAt: new Date('2026-01-01T00:00:00Z'),
+  dueAt: new Date('2026-01-15T00:00:00Z'),
   closedAt: new Date('2026-01-01T01:00:00Z'),
 } as recurly.Invoice;
 
@@ -51,11 +82,15 @@ const VOIDED_INVOICE = {
   account: { id: 'acct_1' },
   subscriptionIds: [],
   origin: 'purchase',
+  type: 'charge',
   state: 'voided',
   currency: 'usd',
   subtotal: 20,
   tax: 1.5,
   total: 21.5,
+  paid: 0,
+  refundableAmount: 0,
+  dueAt: null,
   createdAt: new Date('2026-01-02T00:00:00Z'),
   closedAt: new Date('2026-01-02T01:00:00Z'),
 } as recurly.Invoice;
@@ -66,11 +101,15 @@ const ZERO_DECIMAL_INVOICE = {
   account: { id: 'acct_1' },
   subscriptionIds: ['rec_sub_1', 'rec_sub_2'],
   origin: 'purchase',
+  type: 'charge',
   state: 'partially_refunded',
   currency: 'jpy',
   subtotal: 5000,
   tax: 0,
   total: 5000,
+  paid: 5000,
+  refundableAmount: 3000,
+  dueAt: null,
   createdAt: new Date('2026-01-03T00:00:00Z'),
   closedAt: null,
 } as recurly.Invoice;
@@ -194,6 +233,10 @@ export const RECURLY_FIXTURES = {
   PAID_INVOICE,
   ZERO_DECIMAL_INVOICE,
   TRANSACTIONS: [SUCCESSFUL_TRANSACTION, DECLINED_TRANSACTION],
+  REFUNDS,
+  CURSOR: 'w3n9zpm1qfal:1767225600.0',
+  NEXT_PATH:
+    '/accounts/acct_1/transactions?cursor=w3n9zpm1qfal%3A1767225600.0&limit=2&order=desc&sort=created_at',
   EXPECTED_PAYMENTS: [
     {
       id: 'rec_txn_1',
@@ -201,8 +244,13 @@ export const RECURLY_FIXTURES = {
       invoiceId: 'rec_inv_1',
       status: 'succeeded',
       amount: 12900,
+      amountRefunded: 4550,
       currency: 'GBP',
       description: 'Wegovy 0.5mg',
+      dispute: null,
+      receiptUrl: null,
+      reversed: false,
+      subscription: { id: 'rec_sub_1', status: null, cancelAt: null },
       createdAt: new Date('2026-01-01T00:00:00Z'),
       provider: CashierProvider.Recurly,
     },
@@ -212,8 +260,13 @@ export const RECURLY_FIXTURES = {
       invoiceId: null,
       status: 'failed',
       amount: 5000,
+      amountRefunded: 0,
       currency: 'JPY',
       description: null,
+      dispute: null,
+      receiptUrl: null,
+      reversed: false,
+      subscription: null,
       createdAt: new Date('2026-01-02T00:00:00Z'),
       provider: CashierProvider.Recurly,
     },
@@ -230,7 +283,11 @@ export const RECURLY_FIXTURES = {
       subtotal: 14999,
       tax: 0,
       total: 14999,
+      amountRefunded: 4999,
+      attemptCount: 0,
+      hostedInvoiceUrl: null,
       createdAt: new Date('2026-01-01T00:00:00Z'),
+      dueDate: new Date('2026-01-15T00:00:00Z'),
       paidAt: new Date('2026-01-01T01:00:00Z'),
       provider: CashierProvider.Recurly,
     },
@@ -245,7 +302,11 @@ export const RECURLY_FIXTURES = {
       subtotal: 2000,
       tax: 150,
       total: 2150,
+      amountRefunded: 0,
+      attemptCount: 0,
+      hostedInvoiceUrl: null,
       createdAt: new Date('2026-01-02T00:00:00Z'),
+      dueDate: null,
       paidAt: null,
       provider: CashierProvider.Recurly,
     },
@@ -261,7 +322,11 @@ export const RECURLY_FIXTURES = {
     subtotal: 5000,
     tax: 0,
     total: 5000,
+    amountRefunded: 2000,
+    attemptCount: 0,
+    hostedInvoiceUrl: null,
     createdAt: new Date('2026-01-03T00:00:00Z'),
+    dueDate: null,
     paidAt: null,
     provider: CashierProvider.Recurly,
   } satisfies Invoice,
@@ -310,8 +375,29 @@ export const createRecurlyPager = <Item>(items: Item[]) => ({
   },
 });
 
+export const createRecurlyPagePager = <Item>(
+  items: Item[],
+  next: string | null = null,
+) => {
+  const pager = {
+    done: false,
+    path: null as string | null,
+    eachPage: async function* () {
+      pager.done = next === null;
+      pager.path = next;
+      yield items;
+    },
+  };
+
+  return pager;
+};
+
 export const createFailingRecurlyPager = (error: unknown) => ({
   each: function* () {
+    yield* [];
+    throw error;
+  },
+  eachPage: function* () {
     yield* [];
     throw error;
   },
