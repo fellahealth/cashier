@@ -33,7 +33,7 @@ Cashier checks the config when it is created. An empty `apiKey` throws `Authenti
 
 ## Get a driver with `use`
 
-`use` returns a driver. A driver has the `customers`, `invoices`, `products`, `prices` and `subscriptions` resources described in the [API reference](README.md#api-reference).
+`use` returns a driver. A driver has the `customers`, `invoices`, `payments`, `products`, `prices` and `subscriptions` resources described in the [API reference](README.md#api-reference).
 
 ```ts
 await cashier.use().subscriptions.create({

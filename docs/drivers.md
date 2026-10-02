@@ -24,6 +24,7 @@ On Stripe the SDK is created with API version `2023-08-16`, the version the mapp
 | `provider`      | `CashierProvider`       | The provider behind the driver.   |
 | `customers`     | `CustomersResource`     | [Customers](customers.md)         |
 | `invoices`      | `InvoicesResource`      | [Invoices](invoices.md)           |
+| `payments`      | `PaymentsResource`      | [Payments](payments.md)           |
 | `products`      | `ProductsResource`      | [Products](products.md)           |
 | `prices`        | `PricesResource`        | [Prices](prices.md)               |
 | `subscriptions` | `SubscriptionsResource` | [Subscriptions](subscriptions.md) |
@@ -32,17 +33,18 @@ Every method returns a promise. When it fails, it rejects with a subclass of `Ca
 
 ## How providers map to Cashier
 
-| Cashier      | Stripe       | Recurly                                        |
-| ------------ | ------------ | ---------------------------------------------- |
-| Customer     | Customer     | Account                                        |
-| Invoice      | Invoice      | Invoice                                        |
-| Product      | Product      | Plan                                           |
-| Price        | Price        | Not available. Pricing is defined on the plan. |
-| Subscription | Subscription | Subscription, with a single item for its plan  |
+| Cashier      | Stripe        | Recurly                                        |
+| ------------ | ------------- | ---------------------------------------------- |
+| Customer     | Customer      | Account                                        |
+| Invoice      | Invoice       | Invoice                                        |
+| Payment      | PaymentIntent | Transaction (`purchase` and `capture`)         |
+| Product      | Product       | Plan                                           |
+| Price        | Price         | Not available. Pricing is defined on the plan. |
+| Subscription | Subscription  | Subscription, with a single item for its plan  |
 
 ## Conventions
 
-- **Amounts** (`subtotal`, `tax`, `total`, `unitAmount`) are integers in the currency's minor unit, for example `14999` for USD 149.99 and `5000` for JPY 5000. Recurly returns major units, and Cashier converts them using the currency's number of decimal places.
+- **Amounts** (`subtotal`, `tax`, `total`, `unitAmount`, `amount`) are integers in the currency's minor unit, for example `14999` for USD 149.99 and `5000` for JPY 5000. Recurly returns major units, and Cashier converts them using the currency's number of decimal places.
 - **Currencies** are uppercase ISO 4217 codes such as `USD`.
 - **Timestamps** are `Date` objects.
 - **Metadata** is a `Record<string, string>`. On Recurly it is read from and written to custom fields.
@@ -67,4 +69,4 @@ Every `list` method takes an optional `limit`, which defaults to `100`.
 
 ## TypeScript
 
-The package exports every type it uses: `CashierDriver`, `CashierProvider`, `CashierProviderOptions`, the resource interfaces (`CustomersResource`, `InvoicesResource`, `ProductsResource`, `PricesResource`, `SubscriptionsResource`), the result types (`Customer`, `Invoice`, `Product`, `Price`, `Subscription`) and the parameter types such as `CreateSubscriptionParams`.
+The package exports every type it uses: `CashierDriver`, `CashierProvider`, `CashierProviderOptions`, the resource interfaces (`CustomersResource`, `InvoicesResource`, `PaymentsResource`, `ProductsResource`, `PricesResource`, `SubscriptionsResource`), the result types (`Customer`, `Invoice`, `Payment`, `Product`, `Price`, `Subscription`) and the parameter types such as `CreateSubscriptionParams`.

@@ -1,9 +1,34 @@
 import * as recurly from 'recurly';
 import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
+import { Payment } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Subscription } from '../../src/types/subscription.types';
 import { CashierProvider } from '../../src/types/cashier.types';
+
+const SUCCESSFUL_TRANSACTION = {
+  id: 'rec_txn_1',
+  account: { id: 'acct_1' },
+  invoice: { id: 'rec_inv_1' },
+  type: 'purchase',
+  status: 'success',
+  currency: 'gbp',
+  amount: 129,
+  description: 'Wegovy 0.5mg',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+} as recurly.Transaction;
+
+const DECLINED_TRANSACTION = {
+  id: 'rec_txn_2',
+  account: { id: 'acct_1' },
+  invoice: null,
+  type: 'purchase',
+  status: 'declined',
+  currency: 'jpy',
+  amount: 5000,
+  description: null,
+  createdAt: new Date('2026-01-02T00:00:00Z'),
+} as recurly.Transaction;
 
 const PAID_INVOICE = {
   id: 'rec_inv_1',
@@ -168,6 +193,31 @@ export const RECURLY_FIXTURES = {
   INVOICES: [PAID_INVOICE, VOIDED_INVOICE],
   PAID_INVOICE,
   ZERO_DECIMAL_INVOICE,
+  TRANSACTIONS: [SUCCESSFUL_TRANSACTION, DECLINED_TRANSACTION],
+  EXPECTED_PAYMENTS: [
+    {
+      id: 'rec_txn_1',
+      customerId: 'acct_1',
+      invoiceId: 'rec_inv_1',
+      status: 'succeeded',
+      amount: 12900,
+      currency: 'GBP',
+      description: 'Wegovy 0.5mg',
+      createdAt: new Date('2026-01-01T00:00:00Z'),
+      provider: CashierProvider.Recurly,
+    },
+    {
+      id: 'rec_txn_2',
+      customerId: 'acct_1',
+      invoiceId: null,
+      status: 'failed',
+      amount: 5000,
+      currency: 'JPY',
+      description: null,
+      createdAt: new Date('2026-01-02T00:00:00Z'),
+      provider: CashierProvider.Recurly,
+    },
+  ] satisfies Payment[],
   EXPECTED_INVOICES: [
     {
       id: 'rec_inv_1',

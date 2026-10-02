@@ -62,7 +62,7 @@ export class BillingService {
 ## Documentation
 
 - [NestJS guide](https://github.com/fellahealth/cashier/blob/main/docs/nestjs.md): every option, the exception filter and testing.
-- [API reference](https://github.com/fellahealth/cashier/blob/main/docs/README.md): customers, invoices, products, prices and subscriptions.
+- [API reference](https://github.com/fellahealth/cashier/blob/main/docs/README.md): customers, invoices, payments, products, prices and subscriptions.
 - [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class and the HTTP responses.
 
 ## License
