@@ -7,3 +7,6 @@ coverage/
 .env
 .env.*
 .context/
+packages/*/LICENSE
+packages/*/CHANGELOG.md
+packages/cashier/README.md

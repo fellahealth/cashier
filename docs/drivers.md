@@ -3,21 +3,17 @@
 ## Creating a driver
 
 ```ts
-import { cashier, Cashier } from '@aios-medical/cashier';
+import { createCashier } from '@aios-medical/cashier';
 
-const stripe = cashier.use('stripe', {
-  apiKey: process.env.STRIPE_SECRET_KEY!,
+const cashier = createCashier({
+  default: 'stripe',
+  providers: { stripe: { apiKey: process.env.STRIPE_SECRET_KEY! } },
 });
-const recurly = new Cashier().use('recurly', {
-  apiKey: process.env.RECURLY_API_KEY!,
-});
+
+const driver = cashier.use();
 ```
 
-`cashier` is a shared instance of the `Cashier` class. Create your own with `new Cashier()` when you use [dependency injection](dependency-injection.md).
-
-`use(provider, options)` returns a `CashierDriver`. It throws `AuthenticationError` when `apiKey` is empty and `ValidationError` for an unknown provider.
-
-`use` creates a new provider client every time it is called. Call it once per API key and reuse the driver.
+`use()` returns a `CashierDriver` for the default provider, `use('recurly')` for a configured provider, and `use('stripe', { apiKey })` for credentials given at runtime. Drivers are created once and reused. See [TypeScript](typescript.md) for every option.
 
 On Stripe the SDK is created with API version `2023-08-16`, the version the mappers are written for.
 

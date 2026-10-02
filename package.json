@@ -1,95 +1,55 @@
 {
-  "name": "@aios-medical/cashier",
-  "version": "0.0.0-development",
-  "description": "Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support.",
+  "name": "aios-cashier",
+  "private": true,
+  "description": "Monorepo for @aios-medical/cashier and its framework integrations.",
   "license": "MIT",
-  "author": "AIOS",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fellahealth/cashier.git"
   },
-  "homepage": "https://github.com/fellahealth/cashier#readme",
-  "bugs": {
-    "url": "https://github.com/fellahealth/cashier/issues"
-  },
-  "keywords": [
-    "billing",
-    "payments",
-    "subscriptions",
-    "invoices",
-    "customers",
-    "stripe",
-    "recurly",
-    "payment-gateway",
-    "saas",
-    "typescript",
-    "nodejs",
-    "nestjs",
-    "nest",
-    "nestjs-billing",
-    "nestjs-stripe",
-    "nestjs-recurly",
-    "dependency-injection"
-  ],
-  "sideEffects": false,
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
-    },
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "dist",
-    "CHANGELOG.md"
+  "workspaces": [
+    "packages/*"
   ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "npm run build -w packages/cashier && npm run build -w packages/express -w packages/nestjs",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "prepublishOnly": "npm run build"
-  },
-  "peerDependencies": {
-    "recurly": "^4.67.0",
-    "stripe": "^13.0.0"
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@nestjs/common": "^11.2.7",
+    "@nestjs/core": "^11.2.7",
+    "@nestjs/platform-express": "^11.2.7",
+    "@nestjs/testing": "^11.2.7",
+    "@semantic-release/exec": "^7.1.0",
     "@swc/core": "^1.16.12",
     "@swc/jest": "^0.2.39",
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.43",
+    "@types/supertest": "^7.2.1",
     "conventional-changelog-conventionalcommits": "^9.3.1",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
+    "express": "^5.2.1",
     "globals": "^17.12.0",
     "jest": "^30.5.2",
     "prettier": "^3.9.9",
     "recurly": "^4.81.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
     "semantic-release": "^25.0.9",
     "stripe": "^13.11.0",
+    "supertest": "^7.3.0",
     "tsup": "^8.5.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.0"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
   }
 }

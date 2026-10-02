@@ -1,0 +1,68 @@
+{
+  "name": "@aios-medical/cashier-nestjs",
+  "version": "0.0.0-development",
+  "description": "NestJS module for Cashier: unified subscription billing with forRoot, forRootAsync, an injectable CashierService and an exception filter.",
+  "license": "MIT",
+  "author": "AIOS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fellahealth/cashier.git",
+    "directory": "packages/nestjs"
+  },
+  "homepage": "https://github.com/fellahealth/cashier#readme",
+  "bugs": {
+    "url": "https://github.com/fellahealth/cashier/issues"
+  },
+  "keywords": [
+    "nestjs",
+    "nest",
+    "nestjs-module",
+    "nestjs-billing",
+    "nestjs-stripe",
+    "nestjs-recurly",
+    "billing",
+    "payments",
+    "subscriptions",
+    "stripe",
+    "recurly",
+    "dependency-injection",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepack": "npm run build && cp ../../LICENSE ../../CHANGELOG.md ."
+  },
+  "peerDependencies": {
+    "@aios-medical/cashier": "0.0.0-development",
+    "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0",
+    "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

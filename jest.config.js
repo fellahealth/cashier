@@ -1,19 +1,23 @@
 module.exports = {
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
-  testMatch: ['**/*.spec.ts'],
+  roots: ['<rootDir>/packages'],
+  testMatch: ['**/tests/**/*.spec.ts'],
+  moduleNameMapper: {
+    '^@aios-medical/cashier$': '<rootDir>/packages/cashier/src/index.ts',
+  },
   transform: {
     '^.+\\.ts$': [
       '@swc/jest',
       {
         jsc: {
-          parser: { syntax: 'typescript' },
+          parser: { syntax: 'typescript', decorators: true },
+          transform: { legacyDecorator: true, decoratorMetadata: true },
           target: 'es2022',
         },
         module: { type: 'commonjs' },
       },
     ],
   },
-  collectCoverageFrom: ['src/**/*.ts'],
+  collectCoverageFrom: ['packages/*/src/**/*.ts'],
   coverageDirectory: 'coverage',
 };

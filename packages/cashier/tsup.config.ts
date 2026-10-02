@@ -29,7 +29,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   keepNames: true,
-  tsconfig: 'tsconfig.build.json',
+  tsconfig: 'tsconfig.json',
   noExternal: [/^recurly$/],
   esbuildPlugins: [recurlyEsmInterop],
 });

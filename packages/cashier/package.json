@@ -1,0 +1,71 @@
+{
+  "name": "@aios-medical/cashier",
+  "version": "0.0.0-development",
+  "description": "Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support.",
+  "license": "MIT",
+  "author": "AIOS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fellahealth/cashier.git",
+    "directory": "packages/cashier"
+  },
+  "homepage": "https://github.com/fellahealth/cashier#readme",
+  "bugs": {
+    "url": "https://github.com/fellahealth/cashier/issues"
+  },
+  "keywords": [
+    "billing",
+    "payments",
+    "subscriptions",
+    "invoices",
+    "customers",
+    "stripe",
+    "recurly",
+    "payment-gateway",
+    "saas",
+    "typescript",
+    "nodejs",
+    "nestjs",
+    "nest",
+    "nestjs-billing",
+    "nestjs-stripe",
+    "nestjs-recurly",
+    "dependency-injection"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepack": "npm run build && cp ../../README.md ../../LICENSE ../../CHANGELOG.md ."
+  },
+  "peerDependencies": {
+    "recurly": "^4.67.0",
+    "stripe": "^13.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

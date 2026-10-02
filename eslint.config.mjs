@@ -4,16 +4,22 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'node_modules/'] },
+  { ignores: ['**/dist/', '**/coverage/', '**/node_modules/'] },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
     languageOptions: {
       globals: { ...globals.node },
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
+    },
   },
   {
-    files: ['tests/**/*.ts'],
+    files: ['packages/*/tests/**/*.ts'],
     languageOptions: {
       globals: { ...globals.jest },
     },

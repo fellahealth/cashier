@@ -3,16 +3,34 @@
 [![npm](https://img.shields.io/npm/v/@aios-medical/cashier.svg)](https://www.npmjs.com/package/@aios-medical/cashier)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/fellahealth/cashier/blob/main/LICENSE)
 
-Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS support. Stripe and Recurly are supported today.
+Unified subscription billing for Node.js and TypeScript. One API across payment providers, with typed errors and NestJS and Express support. Stripe and Recurly are supported today.
 
-Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set of methods and types. Your code asks for a driver, calls `driver.subscriptions.create(...)`, and gets back the same `Subscription` shape whichever provider is behind it. Provider errors are turned into a small set of typed errors, so you can handle a declined card or a missing customer the same way on both.
+Cashier puts payment providers behind one set of methods and types. Your code asks for a driver, calls `driver.subscriptions.create(...)`, and gets back the same `Subscription` shape whichever provider is behind it. Each provider is a driver, so new providers can be added without changing your code. Provider errors are turned into a small set of typed errors, so you can handle a declined card or a missing customer the same way everywhere.
 
-- One interface for Stripe and Recurly, so you can switch providers or run both.
+- One interface for every provider, so you can switch providers or run several side by side.
 - Consistent results: amounts in minor units (cents), uppercase ISO 4217 currency codes, `Date` objects for timestamps.
 - Typed errors such as `NotFoundError`, `PaymentFailedError` and `RateLimitError`, with the original provider error kept as `cause`.
 - Works from CommonJS and ES modules, with TypeScript types included.
-- Fits NestJS and other dependency injection containers: register `new Cashier()` as a provider and inject it. See [Dependency injection](https://github.com/fellahealth/cashier/blob/main/docs/dependency-injection.md).
+- First-class NestJS (`CashierModule.forRoot`, injectable `CashierService`) and Express (`req.cashier`, error handler) packages.
+- Switch providers with one config value, or use other credentials at runtime.
 - No runtime dependencies besides the provider clients you install yourself.
+
+## Packages
+
+| Package                                                                                        | Use it for                                                                              |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [`@aios-medical/cashier`](https://www.npmjs.com/package/@aios-medical/cashier)                 | The core library. Works in any Node.js or TypeScript project.                           |
+| [`@aios-medical/cashier-nestjs`](https://www.npmjs.com/package/@aios-medical/cashier-nestjs)   | NestJS module with `forRoot`, `forRootAsync`, `CashierService` and an exception filter. |
+| [`@aios-medical/cashier-express`](https://www.npmjs.com/package/@aios-medical/cashier-express) | Express middleware for `req.cashier` and an error handler.                              |
+
+All packages are released together with the same version.
+
+## Providers
+
+| Provider | Driver name | SDK (peer dependency)                                             |
+| -------- | ----------- | ----------------------------------------------------------------- |
+| Stripe   | `'stripe'`  | [`stripe`](https://www.npmjs.com/package/stripe) v13              |
+| Recurly  | `'recurly'` | [`recurly`](https://www.npmjs.com/package/recurly) v4.67 or later |
 
 ## Install
 
@@ -20,25 +38,29 @@ Cashier wraps the official `stripe` and `recurly` Node.js clients behind one set
 npm install @aios-medical/cashier stripe recurly
 ```
 
-`stripe` (v13) and `recurly` (v4.67 or later) are peer dependencies. Install both, since Cashier loads both clients. Node.js 20 or later is required.
+Each driver uses its provider's official SDK, installed as a peer dependency. Install the SDKs of every provider in the table above, since Cashier currently loads all of them. Node.js 20 or later is required.
 
 ## Quick start
 
 ```ts
-import { cashier, PaymentFailedError } from '@aios-medical/cashier';
+import { createCashier, PaymentFailedError } from '@aios-medical/cashier';
 
-const billing = cashier.use('stripe', {
-  apiKey: process.env.STRIPE_SECRET_KEY!,
+const cashier = createCashier({
+  default: 'stripe',
+  providers: {
+    stripe: { apiKey: process.env.STRIPE_SECRET_KEY! },
+    recurly: { apiKey: process.env.RECURLY_API_KEY! },
+  },
 });
 
-const customer = await billing.customers.create({
+const customer = await cashier.use().customers.create({
   email: 'jane@example.com',
   firstName: 'Jane',
   lastName: 'Doe',
 });
 
 try {
-  const subscription = await billing.subscriptions.create({
+  const subscription = await cashier.use().subscriptions.create({
     customer: customer.id,
     price: 'price_123',
     currency: 'USD',
@@ -54,13 +76,75 @@ try {
 }
 ```
 
-Switching to Recurly only changes the `use` call:
+`use` picks the provider for each call:
+
+| Call                                | Driver                                                           |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| `cashier.use()`                     | The `default` provider. Switch providers by changing the config. |
+| `cashier.use('recurly')`            | A provider from `providers`.                                     |
+| `cashier.use('stripe', { apiKey })` | Other credentials, given at runtime.                             |
+
+Drivers are created once and reused, so calling `use` on every request is cheap. See [TypeScript](https://github.com/fellahealth/cashier/blob/main/docs/typescript.md#use-different-credentials-at-runtime).
+
+## Use with
+
+### TypeScript
+
+The core package is all you need. Pass the Cashier to your classes so tests can replace it. See [TypeScript](https://github.com/fellahealth/cashier/blob/main/docs/typescript.md).
+
+### NestJS
+
+```bash
+npm install @aios-medical/cashier-nestjs
+```
 
 ```ts
-const billing = cashier.use('recurly', {
-  apiKey: process.env.RECURLY_API_KEY!,
-});
+@Module({
+  imports: [
+    CashierModule.forRootAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        default: 'stripe',
+        providers: {
+          stripe: { apiKey: config.getOrThrow('STRIPE_SECRET_KEY') },
+        },
+      }),
+    }),
+  ],
+  providers: [{ provide: APP_FILTER, useClass: CashierExceptionFilter }],
+})
+export class AppModule {}
+
+@Injectable()
+export class BillingService {
+  constructor(private readonly cashier: CashierService) {}
+
+  getInvoice(invoiceId: string) {
+    return this.cashier.use().invoices.get(invoiceId);
+  }
+}
 ```
+
+See [NestJS](https://github.com/fellahealth/cashier/blob/main/docs/nestjs.md).
+
+### Express
+
+```bash
+npm install @aios-medical/cashier-express
+```
+
+```ts
+app.use(cashierMiddleware(cashier));
+
+app.get('/invoices/:id', async (req, res) => {
+  res.json(await req.cashier.use().invoices.get(req.params.id));
+});
+
+app.use(cashierErrorHandler());
+```
+
+See [Express](https://github.com/fellahealth/cashier/blob/main/docs/express.md).
 
 ## Documentation
 
@@ -77,8 +161,8 @@ Every resource works the same way on each provider. The full reference, with par
 Guides:
 
 - [Drivers and conventions](https://github.com/fellahealth/cashier/blob/main/docs/drivers.md): amounts, currencies, metadata, Recurly codes and pagination.
-- [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class and how provider errors are mapped.
-- [Dependency injection](https://github.com/fellahealth/cashier/blob/main/docs/dependency-injection.md): NestJS, plain classes and testing.
+- [Errors](https://github.com/fellahealth/cashier/blob/main/docs/errors.md): every error class, how provider errors are mapped, and the HTTP responses.
+- [TypeScript](https://github.com/fellahealth/cashier/blob/main/docs/typescript.md), [NestJS](https://github.com/fellahealth/cashier/blob/main/docs/nestjs.md) and [Express](https://github.com/fellahealth/cashier/blob/main/docs/express.md): setup and testing for each.
 
 ## Errors
 
@@ -88,25 +172,12 @@ Every method rejects with a subclass of `CashierError`, such as `NotFoundError`,
 import { NotFoundError } from '@aios-medical/cashier';
 
 try {
-  await billing.customers.get('cus_123');
+  await cashier.use().customers.get('cus_123');
 } catch (error) {
   if (error instanceof NotFoundError) return null;
   throw error;
 }
 ```
-
-## NestJS
-
-Register a `Cashier` instance as a provider and inject it:
-
-```ts
-@Module({
-  providers: [{ provide: Cashier, useValue: new Cashier() }, BillingService],
-})
-export class BillingModule {}
-```
-
-See [Dependency injection](https://github.com/fellahealth/cashier/blob/main/docs/dependency-injection.md) for a full service example and how to fake it in tests.
 
 ## Contributing
 

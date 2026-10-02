@@ -14,22 +14,54 @@ npm install
 
 ## Scripts
 
-| Command                 | What it does                                   |
-| ----------------------- | ---------------------------------------------- |
-| `npm run build`         | Builds CommonJS, ES modules and types to dist/ |
-| `npm test`              | Runs the Jest test suite                       |
-| `npm run test:coverage` | Runs the tests with a coverage report          |
-| `npm run typecheck`     | Type checks the source and tests               |
-| `npm run lint`          | Lints with ESLint                              |
-| `npm run format`        | Formats every file with Prettier               |
-| `npm run format:check`  | Checks formatting without writing              |
+| Command                 | What it does                          |
+| ----------------------- | ------------------------------------- |
+| `npm run build`         | Builds every package to its own dist/ |
+| `npm test`              | Runs the Jest test suite              |
+| `npm run test:coverage` | Runs the tests with a coverage report |
+| `npm run typecheck`     | Type checks the source and tests      |
+| `npm run lint`          | Lints with ESLint                     |
+| `npm run format`        | Formats every file with Prettier      |
+| `npm run format:check`  | Checks formatting without writing     |
 
-Run `npm run format:check && npm run lint && npm run typecheck && npm test && npm run build` before you open a pull request. CI runs the same checks on Node.js 20 and 22.
+Run every script from the repository root. Run `npm run format:check && npm run lint && npm run typecheck && npm test && npm run build` before you open a pull request. CI runs the same checks on Node.js 20 and 22.
 
 ## Project layout
 
-- `src/` holds the library. Each provider lives in `src/drivers/<provider>/` with its resources, mappers and error mapper.
+The repository is an npm workspaces monorepo. Every folder in `packages/` is published to npm as its own package.
+
+| Folder             | npm package                     | Contents                                             |
+| ------------------ | ------------------------------- | ---------------------------------------------------- |
+| `packages/cashier` | `@aios-medical/cashier`         | The core library and drivers                         |
+| `packages/nestjs`  | `@aios-medical/cashier-nestjs`  | NestJS module, `CashierService` and exception filter |
+| `packages/express` | `@aios-medical/cashier-express` | Express middleware and error handler                 |
+
+Inside a package:
+
+- `src/` holds the code. In `packages/cashier`, each provider lives in `src/drivers/<provider>/` with its resources, mappers and error mapper.
 - `tests/` mirrors `src/` and uses mocked provider clients, so no network access or API keys are needed.
+- `package.json`, `tsconfig.json` and `tsup.config.ts` hold the package's own settings. Linting, formatting, testing and the shared TypeScript options live at the root.
+
+Documentation for every package lives in `docs/` at the root. The root `README.md` is the npm page of `@aios-medical/cashier`, and the other packages have their own `README.md`. The root `LICENSE` and `CHANGELOG.md` (and the root `README.md` for `packages/cashier`) are copied into each package when it is packed, so do not edit the copies.
+
+In the repository, the NestJS and Express packages use the source of `@aios-medical/cashier` directly, through the TypeScript `paths` and Jest `moduleNameMapper` settings. Their peer dependency on `@aios-medical/cashier` is set to the release version when a release is published.
+
+## Adding a driver
+
+Each provider is a driver in `packages/cashier/src/drivers/<provider>/`. The Stripe and Recurly drivers are the reference: copy the structure of the one closest to your provider.
+
+1. Add the provider name to `CashierProvider` and its options to `CashierProviderOptions` in `packages/cashier/src/types/cashier.types.ts`.
+2. Create the driver folder:
+   - `<provider>.driver.ts`: a class that implements `CashierDriver` and creates the five resources.
+   - `resources/`: one class per resource, implementing `CustomersResource`, `InvoicesResource`, `ProductsResource`, `PricesResource` and `SubscriptionsResource`.
+   - `mappers/`: functions that turn the provider's objects into Cashier's `Customer`, `Invoice`, `Product`, `Price` and `Subscription`.
+   - `<provider>-error.mapper.ts` and `<provider>-request.ts`: map every provider error to a `CashierError` subclass, and wrap every call with that mapping.
+3. Register the driver in `createDriver` in `packages/cashier/src/drivers/create-driver.ts`.
+4. Add the provider's official SDK to `peerDependencies` in `packages/cashier/package.json`, and to `devDependencies` in the root `package.json`.
+5. Add tests in `packages/cashier/tests/<provider>/` with a mocked SDK client, like the existing `tests/fixtures/*-client.mock.ts`. No network access or real API keys.
+6. Document it: add a column for the provider to each resource page in `docs/`, the error mapping in `docs/errors.md`, and a row to the Providers table in `README.md`.
+
+When the provider has no equivalent for a method, reject with `UnsupportedOperationError`, as the Recurly driver does for prices. Follow the conventions in [Drivers and conventions](docs/drivers.md#conventions): amounts in minor units, uppercase currency codes, `Date` timestamps, and `status: 'unknown'` for states Cashier does not know.
 
 ## Guidelines
 
@@ -57,7 +89,7 @@ Releases are fully automated with [semantic-release](https://semantic-release.gi
 | `feat!: ...` or a `BREAKING CHANGE:` footer         | Major, for example 1.0.0 |
 | `chore`, `ci`, `test`, `build`, `refactor`, `style` | No release               |
 
-When there is something to release, the workflow creates the `vX.Y.Z` tag, publishes a GitHub Release with notes generated from the commits, and publishes the package to npm under [`@aios-medical`](https://www.npmjs.com/org/aios-medical) with provenance. Nothing is committed back to the repository, so the `version` in `package.json` stays at `0.0.0-development`. The published version comes from the tag.
+When there is something to release, the workflow creates the `vX.Y.Z` tag, publishes a GitHub Release with notes generated from the commits, and publishes every package in `packages/` to npm under [`@aios-medical`](https://www.npmjs.com/org/aios-medical) with provenance. All packages are released together with the same version. Nothing is committed back to the repository, so the `version` in each `package.json` stays at `0.0.0-development`. The published version comes from the tag.
 
 `docs` commits publish a patch because npm only updates the README shown on npmjs.com when a new version is published. Use `chore` for changes that should not be released, such as typo fixes in CONTRIBUTING.md.
 
