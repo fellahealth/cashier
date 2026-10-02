@@ -20,16 +20,16 @@ Every method rejects with a subclass of `CashierError`. Raw Stripe or Recurly er
 
 ## Properties
 
-| Property         | Type                                 | Description                                                                   |
-| ---------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
-| `name`           | `string`                             | The class name, for example `NotFoundError`.                                  |
-| `message`        | `string`                             | The provider's message, or Cashier's own message.                             |
-| `code`           | `CashierErrorCode`                   | One of the codes in the table above.                                          |
-| `provider`       | `'stripe' \| 'recurly' \| undefined` | The provider that failed.                                                     |
-| `providerStatus` | `number \| undefined`                | The HTTP status from the provider.                                            |
-| `providerCode`   | `string \| undefined`                | The provider's error code, such as `resource_missing`.                        |
-| `cause`          | `unknown`                            | The original error from the provider client.                                  |
-| `declineCode`    | `string \| undefined`                | Only on `PaymentFailedError`. The decline code, such as `insufficient_funds`. |
+| Property         | Type                           | Description                                                                   |
+| ---------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `name`           | `string`                       | The class name, for example `NotFoundError`.                                  |
+| `message`        | `string`                       | The provider's message, or Cashier's own message.                             |
+| `code`           | `CashierErrorCode`             | One of the codes in the table above.                                          |
+| `provider`       | `CashierProvider \| undefined` | The provider that failed.                                                     |
+| `providerStatus` | `number \| undefined`          | The HTTP status from the provider.                                            |
+| `providerCode`   | `string \| undefined`          | The provider's error code, such as `resource_missing`.                        |
+| `cause`          | `unknown`                      | The original error from the provider client.                                  |
+| `declineCode`    | `string \| undefined`          | Only on `PaymentFailedError`. The decline code, such as `insufficient_funds`. |
 
 ## Handling errors
 

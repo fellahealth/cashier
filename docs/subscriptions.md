@@ -106,7 +106,7 @@ await driver.subscriptions.cancel('sub_123', { atPeriodEnd: true });
 | `trialEnd`           | `Date \| null`           | End of the free trial.                            |
 | `createdAt`          | `Date`                   | When it was created.                              |
 | `metadata`           | `Record<string, string>` | Stripe metadata or Recurly custom fields.         |
-| `provider`           | `'stripe' \| 'recurly'`  | The provider it came from.                        |
+| `provider`           | `CashierProvider`        | The provider it came from.                        |
 
 ### Subscription items
 

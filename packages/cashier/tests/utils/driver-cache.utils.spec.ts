@@ -2,7 +2,7 @@ import {
   DriverCache,
   toDriverCacheKey,
 } from '../../src/utils/driver-cache.utils';
-import { CashierDriver } from '../../src/types/cashier.types';
+import { CashierDriver, CashierProvider } from '../../src/types/cashier.types';
 
 const fakeDriver = (name: string) => ({ name }) as unknown as CashierDriver;
 
@@ -35,18 +35,18 @@ describe('DriverCache', () => {
 
 describe('toDriverCacheKey', () => {
   it('should not contain the api key', () => {
-    const key = toDriverCacheKey('stripe', 'sk_test_secret');
+    const key = toDriverCacheKey(CashierProvider.Stripe, 'sk_test_secret');
 
     expect(key).toMatch(/^stripe:[a-f0-9]{64}$/);
     expect(key).not.toContain('sk_test_secret');
   });
 
   it('should differ per provider and api key', () => {
-    expect(toDriverCacheKey('stripe', 'key')).not.toBe(
-      toDriverCacheKey('recurly', 'key'),
+    expect(toDriverCacheKey(CashierProvider.Stripe, 'key')).not.toBe(
+      toDriverCacheKey(CashierProvider.Recurly, 'key'),
     );
-    expect(toDriverCacheKey('stripe', 'key')).not.toBe(
-      toDriverCacheKey('stripe', 'other-key'),
+    expect(toDriverCacheKey(CashierProvider.Stripe, 'key')).not.toBe(
+      toDriverCacheKey(CashierProvider.Stripe, 'other-key'),
     );
   });
 });

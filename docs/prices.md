@@ -50,6 +50,6 @@ const prices = await driver.prices.list({ product: 'prod_123', active: true });
 | `interval`   | `BillingInterval \| null`   | `{ unit, count }` for recurring prices, `null` for one-time ones. |
 | `active`     | `boolean`                   | Whether the price can be used.                                    |
 | `createdAt`  | `Date`                      | When it was created.                                              |
-| `provider`   | `'stripe' \| 'recurly'`     | The provider it came from.                                        |
+| `provider`   | `CashierProvider`           | The provider it came from.                                        |
 
 `BillingInterval` is `{ unit: 'day' | 'week' | 'month' | 'year'; count: number }`. For example, `{ unit: 'month', count: 3 }` bills every three months.

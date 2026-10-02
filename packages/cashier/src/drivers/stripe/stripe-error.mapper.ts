@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../types/cashier.types';
 import { CashierError, CashierErrorDetails } from '../../errors/cashier.error';
 import { AuthenticationError } from '../../errors/authentication.error';
 import { AuthorizationError } from '../../errors/authorization.error';
@@ -52,13 +53,13 @@ export const mapStripeError = (error: unknown): CashierError => {
 
   if (!(error instanceof Stripe.errors.StripeError)) {
     return new ProviderError(getErrorMessage(error), {
-      provider: 'stripe',
+      provider: CashierProvider.Stripe,
       cause: error,
     });
   }
 
   const details: CashierErrorDetails = {
-    provider: 'stripe',
+    provider: CashierProvider.Stripe,
     providerStatus: error.statusCode,
     providerCode: error.code,
     cause: error,

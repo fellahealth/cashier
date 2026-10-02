@@ -1,4 +1,5 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../../types/cashier.types';
 import { Invoice, InvoiceStatus } from '../../../types/invoice.types';
 import { toMinorUnits } from '../../../utils/money.utils';
 
@@ -33,6 +34,6 @@ export const mapRecurlyInvoice = (invoice: recurly.Invoice): Invoice => {
     total: toMinorUnits(invoice.total ?? 0, currency),
     createdAt: invoice.createdAt ?? new Date(0),
     paidAt: invoice.state === 'paid' ? (invoice.closedAt ?? null) : null,
-    provider: 'recurly',
+    provider: CashierProvider.Recurly,
   };
 };

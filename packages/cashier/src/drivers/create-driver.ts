@@ -11,11 +11,11 @@ export const createDriver = (
   apiKey: string,
 ): CashierDriver => {
   switch (provider) {
-    case 'stripe':
+    case CashierProvider.Stripe:
       return new StripeDriver(
         new Stripe(apiKey, { apiVersion: STRIPE_API_VERSION }),
       );
-    case 'recurly':
+    case CashierProvider.Recurly:
       return new RecurlyDriver(new recurly.Client(apiKey));
     default:
       throw new ValidationError(`Unsupported cashier provider "${provider}"`);

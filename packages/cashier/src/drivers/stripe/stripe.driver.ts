@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { CashierDriver } from '../../types/cashier.types';
+import { CashierDriver, CashierProvider } from '../../types/cashier.types';
 import { StripeCustomersResource } from './resources/stripe-customers.resource';
 import { StripeInvoicesResource } from './resources/stripe-invoices.resource';
 import { StripeProductsResource } from './resources/stripe-products.resource';
@@ -7,7 +7,7 @@ import { StripePricesResource } from './resources/stripe-prices.resource';
 import { StripeSubscriptionsResource } from './resources/stripe-subscriptions.resource';
 
 export class StripeDriver implements CashierDriver {
-  readonly provider = 'stripe' as const;
+  readonly provider = CashierProvider.Stripe;
   readonly customers: StripeCustomersResource;
   readonly invoices: StripeInvoicesResource;
   readonly products: StripeProductsResource;

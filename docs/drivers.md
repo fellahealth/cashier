@@ -3,17 +3,17 @@
 ## Creating a driver
 
 ```ts
-import { createCashier } from '@aios-medical/cashier';
+import { CashierProvider, createCashier } from '@aios-medical/cashier';
 
 const cashier = createCashier({
-  default: 'stripe',
+  default: CashierProvider.Stripe,
   providers: { stripe: { apiKey: process.env.STRIPE_SECRET_KEY! } },
 });
 
 const driver = cashier.use();
 ```
 
-`use()` returns a `CashierDriver` for the default provider, `use('recurly')` for a configured provider, and `use('stripe', { apiKey })` for credentials given at runtime. Drivers are created once and reused. See [TypeScript](typescript.md) for every option.
+`use()` returns a `CashierDriver` for the default provider, `use(CashierProvider.Recurly)` for a configured provider, and `use(CashierProvider.Stripe, { apiKey })` for credentials given at runtime. Drivers are created once and reused. See [TypeScript](typescript.md) for every option.
 
 On Stripe the SDK is created with API version `2023-08-16`, the version the mappers are written for.
 
@@ -21,7 +21,7 @@ On Stripe the SDK is created with API version `2023-08-16`, the version the mapp
 
 | Property        | Type                    | Reference                         |
 | --------------- | ----------------------- | --------------------------------- |
-| `provider`      | `'stripe' \| 'recurly'` | The provider behind the driver.   |
+| `provider`      | `CashierProvider`       | The provider behind the driver.   |
 | `customers`     | `CustomersResource`     | [Customers](customers.md)         |
 | `invoices`      | `InvoicesResource`      | [Invoices](invoices.md)           |
 | `products`      | `ProductsResource`      | [Products](products.md)           |

@@ -1,4 +1,5 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
   Subscription,
   SubscriptionStatus,
@@ -60,7 +61,7 @@ export const mapRecurlySubscription = (
     trialEnd: subscription.trialEndsAt ?? null,
     createdAt: subscription.createdAt ?? new Date(0),
     metadata: mapCustomFields(subscription.customFields),
-    provider: 'recurly',
+    provider: CashierProvider.Recurly,
   };
 };
 

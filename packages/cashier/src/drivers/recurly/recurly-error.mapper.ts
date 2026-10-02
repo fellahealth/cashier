@@ -1,4 +1,5 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../types/cashier.types';
 import { CashierError, CashierErrorDetails } from '../../errors/cashier.error';
 import { AuthenticationError } from '../../errors/authentication.error';
 import { AuthorizationError } from '../../errors/authorization.error';
@@ -54,7 +55,7 @@ export const mapRecurlyError = (error: unknown): CashierError => {
 
   if (!(error instanceof recurly.ApiError)) {
     return new ProviderError(getErrorMessage(error), {
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
       cause: error,
     });
   }
@@ -62,7 +63,7 @@ export const mapRecurlyError = (error: unknown): CashierError => {
   const apiError = error as RecurlyApiError;
   const message = getErrorMessage(error);
   const details: CashierErrorDetails = {
-    provider: 'recurly',
+    provider: CashierProvider.Recurly,
     providerStatus: getProviderStatus(apiError),
     providerCode: apiError.type,
     cause: error,

@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
   CreateCustomerParams,
   Customer,
@@ -24,7 +25,7 @@ export class StripeCustomersResource implements CustomersResource {
 
       if (customer.deleted) {
         throw new NotFoundError(`Customer ${customerId} has been deleted`, {
-          provider: 'stripe',
+          provider: CashierProvider.Stripe,
         });
       }
 
@@ -73,7 +74,7 @@ export class StripeCustomersResource implements CustomersResource {
       return Promise.reject(
         new ValidationError(
           'Stripe stores a single name, so firstName and lastName must be updated together',
-          { provider: 'stripe' },
+          { provider: CashierProvider.Stripe },
         ),
       );
     }

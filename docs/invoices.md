@@ -74,21 +74,21 @@ const invoice = await driver.invoices.void('in_123');
 
 ## The `Invoice` object
 
-| Field             | Type                    | Description                                                         |
-| ----------------- | ----------------------- | ------------------------------------------------------------------- |
-| `id`              | `string`                | The provider's id.                                                  |
-| `number`          | `string \| null`        | The invoice number.                                                 |
-| `customerId`      | `string \| null`        | The customer or account id.                                         |
-| `subscriptionIds` | `string[]`              | Subscriptions billed on this invoice.                               |
-| `billingReason`   | `string \| null`        | Stripe `billing_reason` or Recurly `origin`, for example `renewal`. |
-| `status`          | `InvoiceStatus`         | See below.                                                          |
-| `currency`        | `string`                | Uppercase ISO 4217 code.                                            |
-| `subtotal`        | `number`                | In minor units.                                                     |
-| `tax`             | `number`                | In minor units. `0` when there is no tax.                           |
-| `total`           | `number`                | In minor units.                                                     |
-| `createdAt`       | `Date`                  | When the invoice was created.                                       |
-| `paidAt`          | `Date \| null`          | When the invoice was paid.                                          |
-| `provider`        | `'stripe' \| 'recurly'` | The provider it came from.                                          |
+| Field             | Type              | Description                                                         |
+| ----------------- | ----------------- | ------------------------------------------------------------------- |
+| `id`              | `string`          | The provider's id.                                                  |
+| `number`          | `string \| null`  | The invoice number.                                                 |
+| `customerId`      | `string \| null`  | The customer or account id.                                         |
+| `subscriptionIds` | `string[]`        | Subscriptions billed on this invoice.                               |
+| `billingReason`   | `string \| null`  | Stripe `billing_reason` or Recurly `origin`, for example `renewal`. |
+| `status`          | `InvoiceStatus`   | See below.                                                          |
+| `currency`        | `string`          | Uppercase ISO 4217 code.                                            |
+| `subtotal`        | `number`          | In minor units.                                                     |
+| `tax`             | `number`          | In minor units. `0` when there is no tax.                           |
+| `total`           | `number`          | In minor units.                                                     |
+| `createdAt`       | `Date`            | When the invoice was created.                                       |
+| `paidAt`          | `Date \| null`    | When the invoice was paid.                                          |
+| `provider`        | `CashierProvider` | The provider it came from.                                          |
 
 ### Invoice status
 

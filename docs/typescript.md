@@ -11,10 +11,10 @@ npm install @aios-medical/cashier stripe recurly
 Configure your providers once and create one Cashier for your app:
 
 ```ts
-import { createCashier } from '@aios-medical/cashier';
+import { CashierProvider, createCashier } from '@aios-medical/cashier';
 
 export const cashier = createCashier({
-  default: 'stripe',
+  default: CashierProvider.Stripe,
   providers: {
     stripe: { apiKey: process.env.STRIPE_SECRET_KEY! },
     recurly: { apiKey: process.env.RECURLY_API_KEY! },
@@ -24,7 +24,7 @@ export const cashier = createCashier({
 
 | Option      | Type                                                            | Description                                                                  |
 | ----------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `default`   | `'stripe' \| 'recurly'`                                         | The provider `use()` returns. Optional when only one provider is configured. |
+| `default`   | `CashierProvider`                                               | The provider `use()` returns. Optional when only one provider is configured. |
 | `providers` | `{ stripe?: { apiKey: string }, recurly?: { apiKey: string } }` | The providers your app uses. Each one needs a non-empty `apiKey`.            |
 
 `createCashier(config)` is the same as `new Cashier(config)`. Both config options are optional. With no config at all, pass the API key to every `use` call, as shown below.
@@ -42,26 +42,30 @@ await cashier.use().subscriptions.create({
   currency: 'USD',
 });
 
-await cashier.use('recurly').invoices.list({ customer: 'code-customer-42' });
+await cashier
+  .use(CashierProvider.Recurly)
+  .invoices.list({ customer: 'code-customer-42' });
 
 await cashier
-  .use('stripe', { apiKey: otherStripeKey })
+  .use(CashierProvider.Stripe, { apiKey: otherStripeKey })
   .customers.get('cus_456');
 ```
 
-| Call                        | Returns                                     |
-| --------------------------- | ------------------------------------------- |
-| `use()`                     | The driver for the `default` provider.      |
-| `use('recurly')`            | The driver for a provider in `providers`.   |
-| `use('stripe', { apiKey })` | A driver with credentials given at runtime. |
+| Call                                      | Returns                                     |
+| ----------------------------------------- | ------------------------------------------- |
+| `use()`                                   | The driver for the `default` provider.      |
+| `use(CashierProvider.Recurly)`            | The driver for a provider in `providers`.   |
+| `use(CashierProvider.Stripe, { apiKey })` | A driver with credentials given at runtime. |
+
+Providers are named with the `CashierProvider` enum (`CashierProvider.Stripe`, `CashierProvider.Recurly`), so a plain string like `'stripe'` does not compile. The enum values are the strings `'stripe'` and `'recurly'`, which is also what `provider` holds on every result and error.
 
 `cashier.defaultProvider` tells you which provider `use()` returns, or `null` when there is no default.
 
-| Mistake                                             | Error                 |
-| --------------------------------------------------- | --------------------- |
-| `use()` without a default provider                  | `ValidationError`     |
-| `use('recurly')` when Recurly is not in `providers` | `ValidationError`     |
-| `use('stripe', { apiKey: '' })`                     | `AuthenticationError` |
+| Mistake                                                           | Error                 |
+| ----------------------------------------------------------------- | --------------------- |
+| `use()` without a default provider                                | `ValidationError`     |
+| `use(CashierProvider.Recurly)` when Recurly is not in `providers` | `ValidationError`     |
+| `use(CashierProvider.Stripe, { apiKey: '' })`                     | `AuthenticationError` |
 
 You can call `use` on every request. Cashier keeps the drivers it creates and returns the same one for the same provider and API key.
 
@@ -72,10 +76,10 @@ The keys in `providers` are the defaults. Pass options to `use` to call a provid
 ```ts
 const apiKey = await loadStripeKey();
 
-await cashier.use('stripe', { apiKey }).customers.get('cus_456');
+await cashier.use(CashierProvider.Stripe, { apiKey }).customers.get('cus_456');
 ```
 
-- The options replace the configured credentials for that call only. `use()` and `use('stripe')` keep using the configured ones.
+- The options replace the configured credentials for that call only. `use()` and `use(CashierProvider.Stripe)` keep using the configured ones.
 - The provider does not need to be in `providers`.
 - The same provider and API key always return the same driver, so the Stripe or Recurly client is created once. Up to 100 drivers are kept, and the least recently used one is dropped first.
 - Drivers are looked up by a SHA-256 hash of the API key, so keys never appear in cache keys, logs or error messages.
@@ -85,9 +89,9 @@ await cashier.use('stripe', { apiKey }).customers.get('cus_456');
 `cashier`, exported by the package, is a shared Cashier with no config. It is handy for scripts:
 
 ```ts
-import { cashier } from '@aios-medical/cashier';
+import { cashier, CashierProvider } from '@aios-medical/cashier';
 
-const billing = cashier.use('stripe', {
+const billing = cashier.use(CashierProvider.Stripe, {
   apiKey: process.env.STRIPE_SECRET_KEY!,
 });
 ```
@@ -117,10 +121,10 @@ const billing = new BillingService(cashier);
 Every method returns a promise, so a fake driver is a plain object with `jest.fn()` methods:
 
 ```ts
-import { Cashier, CashierDriver } from '@aios-medical/cashier';
+import { Cashier, CashierDriver, CashierProvider } from '@aios-medical/cashier';
 
 const driver = {
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
   subscriptions: { get: jest.fn().mockResolvedValue(subscription) },
 } as unknown as CashierDriver;
 

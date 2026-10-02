@@ -10,6 +10,7 @@ import { PaymentMethodError } from '../../src/errors/payment-method.error';
 import { ProviderError } from '../../src/errors/provider.error';
 import { RateLimitError } from '../../src/errors/rate-limit.error';
 import { ValidationError } from '../../src/errors/validation.error';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 const raw = (fields: Partial<Stripe.StripeRawError>) =>
   ({ message: 'Stripe failure', ...fields }) as Stripe.StripeRawError;
@@ -113,7 +114,7 @@ describe('mapStripeError', () => {
     const mapped = mapStripeError(error);
 
     expect(mapped).toBeInstanceOf(ExpectedError);
-    expect(mapped.provider).toBe('stripe');
+    expect(mapped.provider).toBe(CashierProvider.Stripe);
     expect(mapped.cause).toBe(error);
   });
 

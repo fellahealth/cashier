@@ -1,6 +1,7 @@
 import express, { ErrorRequestHandler } from 'express';
 import request from 'supertest';
 import {
+  CashierProvider,
   createCashier,
   NotFoundError,
   PaymentFailedError,
@@ -25,18 +26,22 @@ const createApp = () => {
   });
 
   app.get('/missing', () => {
-    throw new NotFoundError('Invoice in_1 not found', { provider: 'stripe' });
+    throw new NotFoundError('Invoice in_1 not found', {
+      provider: CashierProvider.Stripe,
+    });
   });
 
   app.get('/declined', async () => {
     throw new PaymentFailedError('Card declined', {
-      provider: 'stripe',
+      provider: CashierProvider.Stripe,
       declineCode: 'insufficient_funds',
     });
   });
 
   app.get('/provider-down', () => {
-    throw new ProviderError('socket hang up', { provider: 'stripe' });
+    throw new ProviderError('socket hang up', {
+      provider: CashierProvider.Stripe,
+    });
   });
 
   app.get('/other', () => {
@@ -58,7 +63,10 @@ describe('cashierMiddleware', () => {
   it('should attach the Cashier instance to every request', async () => {
     const response = await request(createApp()).get('/provider');
 
-    expect(response.body).toEqual({ provider: 'stripe', sameInstance: true });
+    expect(response.body).toEqual({
+      provider: CashierProvider.Stripe,
+      sameInstance: true,
+    });
   });
 });
 

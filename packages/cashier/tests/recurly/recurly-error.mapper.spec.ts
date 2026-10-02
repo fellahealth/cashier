@@ -12,6 +12,7 @@ import { SubscriptionError } from '../../src/errors/subscription.error';
 import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
 import { ValidationError } from '../../src/errors/validation.error';
 import { withRecurlyStatus } from '../fixtures/recurly.fixtures';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 const transactionError = (code: string, declineCode?: string) =>
   withRecurlyStatus(
@@ -137,7 +138,7 @@ describe('mapRecurlyError', () => {
     const mapped = mapRecurlyError(error);
 
     expect(mapped).toBeInstanceOf(ExpectedError);
-    expect(mapped.provider).toBe('recurly');
+    expect(mapped.provider).toBe(CashierProvider.Recurly);
     expect(mapped.cause).toBe(error);
   });
 

@@ -7,6 +7,7 @@ import {
   createStripeClientMock,
   createStripeMissingResourceError,
 } from '../fixtures/stripe-client.mock';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 describe('StripeInvoicesResource', () => {
   let client: StripeClientMock;
@@ -40,7 +41,7 @@ describe('StripeInvoicesResource', () => {
         invoices.get(STRIPE_FIXTURES.INVOICE_ID),
       ).rejects.toMatchObject({
         constructor: NotFoundError,
-        provider: 'stripe',
+        provider: CashierProvider.Stripe,
         providerStatus: 404,
         providerCode: 'resource_missing',
       });
