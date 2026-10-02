@@ -3,6 +3,7 @@ import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
 import { Product } from '../../src/types/product.types';
 import { Subscription } from '../../src/types/subscription.types';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 const PAID_INVOICE = {
   id: 'rec_inv_1',
@@ -108,7 +109,7 @@ const EXPECTED_ACTIVE_SUBSCRIPTION: Subscription = {
   trialEnd: null,
   createdAt: new Date('2026-01-01T00:00:00Z'),
   metadata: { source: 'checkout' },
-  provider: 'recurly',
+  provider: CashierProvider.Recurly,
 };
 
 const FULL_ACCOUNT = {
@@ -144,7 +145,7 @@ export const RECURLY_FIXTURES = {
       name: 'Jane Doe',
       metadata: { source: 'checkout' },
       createdAt: new Date('2026-01-01T00:00:00Z'),
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     },
     {
       id: 'acct_2',
@@ -153,7 +154,7 @@ export const RECURLY_FIXTURES = {
       name: null,
       metadata: {},
       createdAt: new Date('2026-01-02T00:00:00Z'),
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     },
   ] satisfies Customer[],
   ACCOUNT_ID: 'acct_1',
@@ -181,7 +182,7 @@ export const RECURLY_FIXTURES = {
       total: 14999,
       createdAt: new Date('2026-01-01T00:00:00Z'),
       paidAt: new Date('2026-01-01T01:00:00Z'),
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     },
     {
       id: 'rec_inv_2',
@@ -196,7 +197,7 @@ export const RECURLY_FIXTURES = {
       total: 2150,
       createdAt: new Date('2026-01-02T00:00:00Z'),
       paidAt: null,
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     },
   ] satisfies Invoice[],
   EXPECTED_ZERO_DECIMAL_INVOICE: {
@@ -212,7 +213,7 @@ export const RECURLY_FIXTURES = {
     total: 5000,
     createdAt: new Date('2026-01-03T00:00:00Z'),
     paidAt: null,
-    provider: 'recurly',
+    provider: CashierProvider.Recurly,
   } satisfies Invoice,
   PLANS: [ACTIVE_PLAN, INACTIVE_PLAN],
   ACTIVE_PLAN,
@@ -224,7 +225,7 @@ export const RECURLY_FIXTURES = {
       description: 'Monthly plan',
       active: true,
       createdAt: new Date('2026-01-01T00:00:00Z'),
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     },
     {
       id: 'plan_2',
@@ -233,7 +234,7 @@ export const RECURLY_FIXTURES = {
       description: null,
       active: false,
       createdAt: new Date('2025-01-01T00:00:00Z'),
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     },
   ] satisfies Product[],
   ACTIVE_SUBSCRIPTION,

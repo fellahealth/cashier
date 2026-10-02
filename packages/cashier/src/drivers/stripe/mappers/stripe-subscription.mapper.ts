@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
   Subscription,
   SubscriptionItem,
@@ -30,5 +31,5 @@ export const mapStripeSubscription = (
   trialEnd: fromUnixSeconds(subscription.trial_end),
   createdAt: new Date(subscription.created * 1000),
   metadata: subscription.metadata,
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
 });

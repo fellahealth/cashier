@@ -50,7 +50,7 @@ In the repository, the NestJS and Express packages use the source of `@aios-medi
 
 Each provider is a driver in `packages/cashier/src/drivers/<provider>/`. The Stripe and Recurly drivers are the reference: copy the structure of the one closest to your provider.
 
-1. Add the provider name to `CashierProvider` and its options to `CashierProviderOptions` in `packages/cashier/src/types/cashier.types.ts`.
+1. Add a member to the `CashierProvider` enum (for example `Paddle = 'paddle'`) and the provider's options to `CashierProviderOptions` in `packages/cashier/src/types/cashier.types.ts`.
 2. Create the driver folder:
    - `<provider>.driver.ts`: a class that implements `CashierDriver` and creates the five resources.
    - `resources/`: one class per resource, implementing `CustomersResource`, `InvoicesResource`, `ProductsResource`, `PricesResource` and `SubscriptionsResource`.

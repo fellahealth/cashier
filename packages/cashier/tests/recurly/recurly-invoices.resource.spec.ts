@@ -13,6 +13,7 @@ import {
   asRecurlyClient,
   createRecurlyClientMock,
 } from '../fixtures/recurly-client.mock';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 describe('RecurlyInvoicesResource', () => {
   let client: RecurlyClientMock;
@@ -47,7 +48,7 @@ describe('RecurlyInvoicesResource', () => {
         invoices.get(RECURLY_FIXTURES.INVOICE_ID),
       ).rejects.toMatchObject({
         constructor: NotFoundError,
-        provider: 'recurly',
+        provider: CashierProvider.Recurly,
         providerStatus: 404,
         providerCode: 'not_found',
       });

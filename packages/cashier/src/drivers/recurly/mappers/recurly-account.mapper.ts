@@ -1,4 +1,5 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../../types/cashier.types';
 import { Customer } from '../../../types/customer.types';
 import { mapCustomFields } from './recurly-subscription.mapper';
 
@@ -9,5 +10,5 @@ export const mapRecurlyAccount = (account: recurly.Account): Customer => ({
   name: [account.firstName, account.lastName].filter(Boolean).join(' ') || null,
   metadata: mapCustomFields(account.customFields),
   createdAt: account.createdAt ?? new Date(0),
-  provider: 'recurly',
+  provider: CashierProvider.Recurly,
 });

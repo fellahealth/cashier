@@ -1,5 +1,6 @@
 import { RecurlyPricesResource } from '../../src/drivers/recurly/resources/recurly-prices.resource';
 import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 describe('RecurlyPricesResource', () => {
   const prices = new RecurlyPricesResource();
@@ -7,7 +8,7 @@ describe('RecurlyPricesResource', () => {
   it('should reject get with UnsupportedOperationError', async () => {
     await expect(prices.get()).rejects.toMatchObject({
       constructor: UnsupportedOperationError,
-      provider: 'recurly',
+      provider: CashierProvider.Recurly,
     });
   });
 

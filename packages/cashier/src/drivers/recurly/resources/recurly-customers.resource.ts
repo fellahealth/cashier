@@ -1,4 +1,5 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
   CreateCustomerParams,
   Customer,
@@ -52,7 +53,7 @@ export class RecurlyCustomersResource implements CustomersResource {
     if (!code) {
       return Promise.reject(
         new ValidationError('Recurly requires a code to create a customer', {
-          provider: 'recurly',
+          provider: CashierProvider.Recurly,
         }),
       );
     }

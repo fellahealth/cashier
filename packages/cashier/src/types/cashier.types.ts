@@ -4,7 +4,10 @@ import { PricesResource } from './price.types';
 import { ProductsResource } from './product.types';
 import { SubscriptionsResource } from './subscription.types';
 
-export type CashierProvider = 'stripe' | 'recurly';
+export enum CashierProvider {
+  Stripe = 'stripe',
+  Recurly = 'recurly',
+}
 
 export interface StripeOptions {
   apiKey: string;

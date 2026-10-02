@@ -98,4 +98,4 @@ const customer = await driver.customers.update('cus_123', {
 | `name`      | `string \| null`         | Full name. On Recurly, first and last name joined. |
 | `metadata`  | `Record<string, string>` | Stripe metadata or Recurly custom fields.          |
 | `createdAt` | `Date`                   | When the customer was created.                     |
-| `provider`  | `'stripe' \| 'recurly'`  | The provider it came from.                         |
+| `provider`  | `CashierProvider`        | The provider it came from.                         |

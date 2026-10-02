@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import { Price } from '../../../types/price.types';
 import { getExpandableId } from './stripe-mapper.utils';
 
@@ -13,5 +14,5 @@ export const mapStripePrice = (price: Stripe.Price): Price => ({
     : null,
   active: price.active,
   createdAt: new Date(price.created * 1000),
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
 });

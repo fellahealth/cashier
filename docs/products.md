@@ -40,12 +40,12 @@ const products = await driver.products.list({ active: true });
 
 ## The `Product` object
 
-| Field         | Type                    | Description                                     |
-| ------------- | ----------------------- | ----------------------------------------------- |
-| `id`          | `string`                | The provider's id.                              |
-| `code`        | `string \| null`        | The Recurly plan code. Always `null` on Stripe. |
-| `name`        | `string`                | Name.                                           |
-| `description` | `string \| null`        | Description.                                    |
-| `active`      | `boolean`               | Whether the product or plan can be used.        |
-| `createdAt`   | `Date`                  | When it was created.                            |
-| `provider`    | `'stripe' \| 'recurly'` | The provider it came from.                      |
+| Field         | Type              | Description                                     |
+| ------------- | ----------------- | ----------------------------------------------- |
+| `id`          | `string`          | The provider's id.                              |
+| `code`        | `string \| null`  | The Recurly plan code. Always `null` on Stripe. |
+| `name`        | `string`          | Name.                                           |
+| `description` | `string \| null`  | Description.                                    |
+| `active`      | `boolean`         | Whether the product or plan can be used.        |
+| `createdAt`   | `Date`            | When it was created.                            |
+| `provider`    | `CashierProvider` | The provider it came from.                      |

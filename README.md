@@ -27,10 +27,10 @@ All packages are released together with the same version.
 
 ## Providers
 
-| Provider | Driver name | SDK (peer dependency)                                             |
-| -------- | ----------- | ----------------------------------------------------------------- |
-| Stripe   | `'stripe'`  | [`stripe`](https://www.npmjs.com/package/stripe) v13              |
-| Recurly  | `'recurly'` | [`recurly`](https://www.npmjs.com/package/recurly) v4.67 or later |
+| Provider | Driver name               | SDK (peer dependency)                                             |
+| -------- | ------------------------- | ----------------------------------------------------------------- |
+| Stripe   | `CashierProvider.Stripe`  | [`stripe`](https://www.npmjs.com/package/stripe) v13              |
+| Recurly  | `CashierProvider.Recurly` | [`recurly`](https://www.npmjs.com/package/recurly) v4.67 or later |
 
 ## Install
 
@@ -43,10 +43,14 @@ Each driver uses its provider's official SDK, installed as a peer dependency. In
 ## Quick start
 
 ```ts
-import { createCashier, PaymentFailedError } from '@aios-medical/cashier';
+import {
+  CashierProvider,
+  createCashier,
+  PaymentFailedError,
+} from '@aios-medical/cashier';
 
 const cashier = createCashier({
-  default: 'stripe',
+  default: CashierProvider.Stripe,
   providers: {
     stripe: { apiKey: process.env.STRIPE_SECRET_KEY! },
     recurly: { apiKey: process.env.RECURLY_API_KEY! },
@@ -78,11 +82,11 @@ try {
 
 `use` picks the provider for each call:
 
-| Call                                | Driver                                                           |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `cashier.use()`                     | The `default` provider. Switch providers by changing the config. |
-| `cashier.use('recurly')`            | A provider from `providers`.                                     |
-| `cashier.use('stripe', { apiKey })` | Other credentials, given at runtime.                             |
+| Call                                              | Driver                                                           |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| `cashier.use()`                                   | The `default` provider. Switch providers by changing the config. |
+| `cashier.use(CashierProvider.Recurly)`            | A provider from `providers`.                                     |
+| `cashier.use(CashierProvider.Stripe, { apiKey })` | Other credentials, given at runtime.                             |
 
 Drivers are created once and reused, so calling `use` on every request is cheap. See [TypeScript](https://github.com/fellahealth/cashier/blob/main/docs/typescript.md#use-different-credentials-at-runtime).
 
@@ -105,7 +109,7 @@ npm install @aios-medical/cashier-nestjs
       isGlobal: true,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        default: 'stripe',
+        default: CashierProvider.Stripe,
         providers: {
           stripe: { apiKey: config.getOrThrow('STRIPE_SECRET_KEY') },
         },

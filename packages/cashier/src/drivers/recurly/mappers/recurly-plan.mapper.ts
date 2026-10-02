@@ -1,4 +1,5 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../../types/cashier.types';
 import { Product } from '../../../types/product.types';
 
 export const mapRecurlyPlan = (plan: recurly.Plan): Product => ({
@@ -8,5 +9,5 @@ export const mapRecurlyPlan = (plan: recurly.Plan): Product => ({
   description: plan.description ?? null,
   active: plan.state === 'active',
   createdAt: plan.createdAt ?? new Date(0),
-  provider: 'recurly',
+  provider: CashierProvider.Recurly,
 });

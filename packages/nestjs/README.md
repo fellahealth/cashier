@@ -22,6 +22,7 @@ import {
   CashierModule,
   CashierService,
 } from '@aios-medical/cashier-nestjs';
+import { CashierProvider } from '@aios-medical/cashier';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        default: 'stripe',
+        default: CashierProvider.Stripe,
         providers: {
           stripe: { apiKey: config.getOrThrow('STRIPE_SECRET_KEY') },
           recurly: { apiKey: config.getOrThrow('RECURLY_API_KEY') },
@@ -52,11 +53,11 @@ export class BillingService {
 }
 ```
 
-| Call                                | Driver                                                           |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `cashier.use()`                     | The `default` provider. Switch providers by changing the config. |
-| `cashier.use('recurly')`            | A provider from `providers`.                                     |
-| `cashier.use('stripe', { apiKey })` | Other credentials, given at runtime.                             |
+| Call                                              | Driver                                                           |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| `cashier.use()`                                   | The `default` provider. Switch providers by changing the config. |
+| `cashier.use(CashierProvider.Recurly)`            | A provider from `providers`.                                     |
+| `cashier.use(CashierProvider.Stripe, { apiKey })` | Other credentials, given at runtime.                             |
 
 ## Documentation
 

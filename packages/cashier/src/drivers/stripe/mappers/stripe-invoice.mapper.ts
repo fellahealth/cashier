@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import { Invoice, InvoiceStatus } from '../../../types/invoice.types';
 import { fromUnixSeconds, getExpandableId } from './stripe-mapper.utils';
 
@@ -17,5 +18,5 @@ export const mapStripeInvoice = (invoice: Stripe.Invoice): Invoice => ({
   total: invoice.total,
   createdAt: new Date(invoice.created * 1000),
   paidAt: fromUnixSeconds(invoice.status_transitions?.paid_at),
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
 });

@@ -15,14 +15,14 @@ npm install @aios-medical/cashier @aios-medical/cashier-express stripe recurly
 
 ```ts
 import express from 'express';
-import { createCashier } from '@aios-medical/cashier';
+import { CashierProvider, createCashier } from '@aios-medical/cashier';
 import {
   cashierErrorHandler,
   cashierMiddleware,
 } from '@aios-medical/cashier-express';
 
 const cashier = createCashier({
-  default: 'stripe',
+  default: CashierProvider.Stripe,
   providers: { stripe: { apiKey: process.env.STRIPE_SECRET_KEY! } },
 });
 

@@ -1,7 +1,11 @@
 import 'reflect-metadata';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { Cashier, ValidationError } from '@aios-medical/cashier';
+import {
+  Cashier,
+  CashierProvider,
+  ValidationError,
+} from '@aios-medical/cashier';
 import { CashierModule, CashierService } from '../src';
 
 const STRIPE_KEY = 'sk_test_nestjs';
@@ -13,7 +17,7 @@ const BILLING_CONFIG = 'BILLING_CONFIG';
     {
       provide: BILLING_CONFIG,
       useValue: {
-        provider: 'recurly',
+        provider: CashierProvider.Recurly,
         stripeKey: STRIPE_KEY,
         recurlyKey: RECURLY_KEY,
       },
@@ -36,7 +40,7 @@ describe('CashierModule', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
         CashierModule.forRoot({
-          default: 'stripe',
+          default: CashierProvider.Stripe,
           providers: { stripe: { apiKey: STRIPE_KEY } },
         }),
       ],
@@ -45,8 +49,8 @@ describe('CashierModule', () => {
     const service = moduleRef.get(CashierService);
 
     expect(service).toBeInstanceOf(Cashier);
-    expect(service.defaultProvider).toBe('stripe');
-    expect(service.use().provider).toBe('stripe');
+    expect(service.defaultProvider).toBe(CashierProvider.Stripe);
+    expect(service.use().provider).toBe(CashierProvider.Stripe);
   });
 
   it('should build the options with forRootAsync and injected dependencies', async () => {
@@ -56,7 +60,7 @@ describe('CashierModule', () => {
           imports: [BillingConfigModule],
           inject: [BILLING_CONFIG],
           useFactory: (config: {
-            provider: 'stripe' | 'recurly';
+            provider: CashierProvider;
             stripeKey: string;
             recurlyKey: string;
           }) => ({
@@ -72,9 +76,11 @@ describe('CashierModule', () => {
 
     const service = moduleRef.get(CashierService);
 
-    expect(service.defaultProvider).toBe('recurly');
-    expect(service.use().provider).toBe('recurly');
-    expect(service.use('stripe').provider).toBe('stripe');
+    expect(service.defaultProvider).toBe(CashierProvider.Recurly);
+    expect(service.use().provider).toBe(CashierProvider.Recurly);
+    expect(service.use(CashierProvider.Stripe).provider).toBe(
+      CashierProvider.Stripe,
+    );
   });
 
   it('should make CashierService available everywhere with isGlobal', async () => {
@@ -103,7 +109,9 @@ describe('CashierModule', () => {
       ],
     }).compile();
 
-    expect(moduleRef.get(CashierService).use().provider).toBe('stripe');
+    expect(moduleRef.get(CashierService).use().provider).toBe(
+      CashierProvider.Stripe,
+    );
   });
 
   it('should support per-call api keys without configured providers', async () => {
@@ -113,9 +121,9 @@ describe('CashierModule', () => {
 
     const service = moduleRef.get(CashierService);
 
-    expect(service.use('stripe', { apiKey: STRIPE_KEY }).provider).toBe(
-      'stripe',
-    );
+    expect(
+      service.use(CashierProvider.Stripe, { apiKey: STRIPE_KEY }).provider,
+    ).toBe(CashierProvider.Stripe);
     expect(() => service.use()).toThrow(ValidationError);
   });
 

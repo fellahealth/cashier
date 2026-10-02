@@ -10,6 +10,7 @@ import { APP_FILTER, HttpAdapterHost } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import {
+  CashierProvider,
   NotFoundError,
   PaymentFailedError,
   ProviderError,
@@ -20,20 +21,24 @@ import { CashierExceptionFilter } from '../src';
 class BillingController {
   @Get('missing')
   missing(): never {
-    throw new NotFoundError('Invoice in_1 not found', { provider: 'stripe' });
+    throw new NotFoundError('Invoice in_1 not found', {
+      provider: CashierProvider.Stripe,
+    });
   }
 
   @Get('declined')
   declined(): never {
     throw new PaymentFailedError('Card declined', {
-      provider: 'stripe',
+      provider: CashierProvider.Stripe,
       declineCode: 'insufficient_funds',
     });
   }
 
   @Get('provider-down')
   providerDown(): never {
-    throw new ProviderError('socket hang up', { provider: 'recurly' });
+    throw new ProviderError('socket hang up', {
+      provider: CashierProvider.Recurly,
+    });
   }
 
   @Get('other')

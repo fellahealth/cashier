@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
   CancelSubscriptionParams,
   CreateSubscriptionParams,
@@ -96,7 +97,7 @@ export class StripeSubscriptionsResource implements SubscriptionsResource {
     if (!item || otherItems.length > 0) {
       throw new ValidationError(
         'Changing price or quantity requires a subscription with exactly one item',
-        { provider: 'stripe' },
+        { provider: CashierProvider.Stripe },
       );
     }
 

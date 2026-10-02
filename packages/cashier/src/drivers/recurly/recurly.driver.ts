@@ -1,5 +1,5 @@
 import * as recurly from 'recurly';
-import { CashierDriver } from '../../types/cashier.types';
+import { CashierDriver, CashierProvider } from '../../types/cashier.types';
 import { RecurlyCustomersResource } from './resources/recurly-customers.resource';
 import { RecurlyInvoicesResource } from './resources/recurly-invoices.resource';
 import { RecurlyProductsResource } from './resources/recurly-products.resource';
@@ -7,7 +7,7 @@ import { RecurlyPricesResource } from './resources/recurly-prices.resource';
 import { RecurlySubscriptionsResource } from './resources/recurly-subscriptions.resource';
 
 export class RecurlyDriver implements CashierDriver {
-  readonly provider = 'recurly' as const;
+  readonly provider = CashierProvider.Recurly;
   readonly customers: RecurlyCustomersResource;
   readonly invoices: RecurlyInvoicesResource;
   readonly products: RecurlyProductsResource;

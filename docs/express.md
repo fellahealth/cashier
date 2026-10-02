@@ -10,14 +10,14 @@ npm install @aios-medical/cashier @aios-medical/cashier-express stripe recurly
 
 ```ts
 import express from 'express';
-import { createCashier } from '@aios-medical/cashier';
+import { CashierProvider, createCashier } from '@aios-medical/cashier';
 import {
   cashierErrorHandler,
   cashierMiddleware,
 } from '@aios-medical/cashier-express';
 
 const cashier = createCashier({
-  default: 'stripe',
+  default: CashierProvider.Stripe,
   providers: { stripe: { apiKey: process.env.STRIPE_SECRET_KEY! } },
 });
 
@@ -40,7 +40,7 @@ app.use(cashierErrorHandler());
 ```
 
 - `cashierMiddleware(cashier)` sets `req.cashier` on every request. With TypeScript, `req.cashier` is typed as `Cashier`, with no extra setup.
-- `req.cashier.use()` works exactly like in [TypeScript](typescript.md#get-a-driver-with-use): `use()`, `use('recurly')` or `use('stripe', { apiKey })`.
+- `req.cashier.use()` works exactly like in [TypeScript](typescript.md#get-a-driver-with-use): `use()`, `use(CashierProvider.Recurly)` or `use(CashierProvider.Stripe, { apiKey })`.
 - Add `cashierErrorHandler()` after your routes and before your own error handler.
 
 ## Error responses
@@ -85,10 +85,10 @@ app.use(cashierErrorHandler());
 Use your own Cashier in tests and replace `req.cashier` with a fake:
 
 ```ts
-import { Cashier, CashierDriver } from '@aios-medical/cashier';
+import { Cashier, CashierDriver, CashierProvider } from '@aios-medical/cashier';
 
 const driver = {
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
   subscriptions: { create: jest.fn() },
 } as unknown as CashierDriver;
 

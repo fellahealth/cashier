@@ -13,12 +13,13 @@ With values known up front, use `forRoot`:
 ```ts
 import { Module } from '@nestjs/common';
 import { CashierModule } from '@aios-medical/cashier-nestjs';
+import { CashierProvider } from '@aios-medical/cashier';
 
 @Module({
   imports: [
     CashierModule.forRoot({
       isGlobal: true,
-      default: 'stripe',
+      default: CashierProvider.Stripe,
       providers: {
         stripe: { apiKey: process.env.STRIPE_SECRET_KEY! },
       },
@@ -39,7 +40,10 @@ CashierModule.forRootAsync({
   imports: [ConfigModule],
   inject: [ConfigService],
   useFactory: (config: ConfigService) => ({
-    default: config.get<CashierProvider>('BILLING_PROVIDER', 'stripe'),
+    default: config.get<CashierProvider>(
+      'BILLING_PROVIDER',
+      CashierProvider.Stripe,
+    ),
     providers: {
       stripe: { apiKey: config.getOrThrow('STRIPE_SECRET_KEY') },
       recurly: { apiKey: config.getOrThrow('RECURLY_API_KEY') },
@@ -80,7 +84,7 @@ export class BillingService {
   }
 
   listInvoices(customer: {
-    billingProvider: 'stripe' | 'recurly';
+    billingProvider: CashierProvider;
     billingId: string;
   }) {
     return this.cashier
@@ -91,8 +95,8 @@ export class BillingService {
 ```
 
 - `use()` uses the default provider, so switching providers is a config change.
-- `use('recurly')` picks a configured provider for this call.
-- `use('stripe', { apiKey })` uses other credentials, given at runtime. See [TypeScript](typescript.md#use-different-credentials-at-runtime).
+- `use(CashierProvider.Recurly)` picks a configured provider for this call.
+- `use(CashierProvider.Stripe, { apiKey })` uses other credentials, given at runtime. See [TypeScript](typescript.md#use-different-credentials-at-runtime).
 
 ## Turn Cashier errors into HTTP responses
 
@@ -125,11 +129,11 @@ Replace `CashierService` with a fake in your testing module:
 
 ```ts
 import { Test } from '@nestjs/testing';
-import { CashierDriver } from '@aios-medical/cashier';
+import { CashierDriver, CashierProvider } from '@aios-medical/cashier';
 import { CashierService } from '@aios-medical/cashier-nestjs';
 
 const driver = {
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
   subscriptions: { create: jest.fn() },
 } as unknown as CashierDriver;
 

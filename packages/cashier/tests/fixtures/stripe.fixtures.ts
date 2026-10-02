@@ -4,6 +4,7 @@ import { Invoice } from '../../src/types/invoice.types';
 import { Product } from '../../src/types/product.types';
 import { Price } from '../../src/types/price.types';
 import { Subscription } from '../../src/types/subscription.types';
+import { CashierProvider } from '../../src/types/cashier.types';
 
 const SUBSCRIPTION_INVOICE = {
   id: 'in_123',
@@ -122,7 +123,7 @@ export const STRIPE_FIXTURES = {
     name: 'Jane Doe',
     metadata: { source: 'checkout' },
     createdAt: new Date(1767225600 * 1000),
-    provider: 'stripe',
+    provider: CashierProvider.Stripe,
   } satisfies Customer,
   CUSTOMER_ID: 'cus_123',
   INVOICE_ID: 'in_123',
@@ -148,7 +149,7 @@ export const STRIPE_FIXTURES = {
       total: 15000,
       createdAt: new Date(1767225600 * 1000),
       paidAt: new Date(1767229200 * 1000),
-      provider: 'stripe',
+      provider: CashierProvider.Stripe,
     },
     {
       id: 'in_456',
@@ -163,7 +164,7 @@ export const STRIPE_FIXTURES = {
       total: 6000,
       createdAt: new Date(1767312000 * 1000),
       paidAt: null,
-      provider: 'stripe',
+      provider: CashierProvider.Stripe,
     },
   ] satisfies Invoice[],
   PRODUCT,
@@ -174,7 +175,7 @@ export const STRIPE_FIXTURES = {
     description: null,
     active: true,
     createdAt: new Date(1767225600 * 1000),
-    provider: 'stripe',
+    provider: CashierProvider.Stripe,
   } satisfies Product,
   RECURRING_PRICE,
   ONE_TIME_PRICE,
@@ -187,7 +188,7 @@ export const STRIPE_FIXTURES = {
     interval: { unit: 'month', count: 3 },
     active: true,
     createdAt: new Date(1767225600 * 1000),
-    provider: 'stripe',
+    provider: CashierProvider.Stripe,
   } satisfies Price,
   EXPECTED_ONE_TIME_PRICE: {
     id: 'price_456',
@@ -198,7 +199,7 @@ export const STRIPE_FIXTURES = {
     interval: null,
     active: false,
     createdAt: new Date(1767312000 * 1000),
-    provider: 'stripe',
+    provider: CashierProvider.Stripe,
   } satisfies Price,
   SUBSCRIPTION,
   MULTI_ITEM_SUBSCRIPTION,
@@ -217,6 +218,6 @@ export const STRIPE_FIXTURES = {
     trialEnd: null,
     createdAt: new Date(1767225600 * 1000),
     metadata: { source: 'checkout' },
-    provider: 'stripe',
+    provider: CashierProvider.Stripe,
   } satisfies Subscription,
 };

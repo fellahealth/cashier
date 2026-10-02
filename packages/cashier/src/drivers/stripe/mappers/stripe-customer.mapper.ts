@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import { Customer } from '../../../types/customer.types';
 
 export const mapStripeCustomer = (customer: Stripe.Customer): Customer => ({
@@ -8,7 +9,7 @@ export const mapStripeCustomer = (customer: Stripe.Customer): Customer => ({
   name: customer.name ?? null,
   metadata: customer.metadata,
   createdAt: new Date(customer.created * 1000),
-  provider: 'stripe',
+  provider: CashierProvider.Stripe,
 });
 
 export const toStripeCustomerName = (
