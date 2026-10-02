@@ -5,6 +5,7 @@ export const createRecurlyClientMock = () => ({
   listAccountInvoices: jest.fn(),
   collectInvoice: jest.fn(),
   voidInvoice: jest.fn(),
+  listAccountTransactions: jest.fn(),
   getPlan: jest.fn(),
   listPlans: jest.fn(),
   getAccount: jest.fn(),

@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
+import { Payment } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Price } from '../../src/types/price.types';
 import { Subscription } from '../../src/types/subscription.types';
@@ -112,6 +113,42 @@ const DELETED_CUSTOMER = {
   deleted: true,
 } as unknown as Stripe.DeletedCustomer;
 
+const SUCCEEDED_PAYMENT_INTENT = {
+  id: 'pi_123',
+  customer: 'cus_123',
+  invoice: 'in_123',
+  status: 'succeeded',
+  amount: 12900,
+  currency: 'gbp',
+  description: 'Wegovy 0.5mg',
+  last_payment_error: null,
+  created: 1767225600,
+} as unknown as Stripe.PaymentIntent;
+
+const FAILED_PAYMENT_INTENT = {
+  id: 'pi_456',
+  customer: { id: 'cus_123' },
+  invoice: null,
+  status: 'requires_payment_method',
+  amount: 11900,
+  currency: 'gbp',
+  description: null,
+  last_payment_error: { code: 'card_declined' },
+  created: 1767312000,
+} as unknown as Stripe.PaymentIntent;
+
+const INCOMPLETE_PAYMENT_INTENT = {
+  id: 'pi_789',
+  customer: 'cus_123',
+  invoice: { id: 'in_456' },
+  status: 'requires_action',
+  amount: 8900,
+  currency: 'gbp',
+  description: 'Wegovy 0.25mg',
+  last_payment_error: null,
+  created: 1767398400,
+} as unknown as Stripe.PaymentIntent;
+
 export const STRIPE_FIXTURES = {
   CUSTOMER,
   DELETED_CUSTOMER,
@@ -167,6 +204,46 @@ export const STRIPE_FIXTURES = {
       provider: CashierProvider.Stripe,
     },
   ] satisfies Invoice[],
+  PAYMENT_INTENTS: [
+    SUCCEEDED_PAYMENT_INTENT,
+    FAILED_PAYMENT_INTENT,
+    INCOMPLETE_PAYMENT_INTENT,
+  ],
+  EXPECTED_PAYMENTS: [
+    {
+      id: 'pi_123',
+      customerId: 'cus_123',
+      invoiceId: 'in_123',
+      status: 'succeeded',
+      amount: 12900,
+      currency: 'GBP',
+      description: 'Wegovy 0.5mg',
+      createdAt: new Date(1767225600 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+    {
+      id: 'pi_456',
+      customerId: 'cus_123',
+      invoiceId: null,
+      status: 'failed',
+      amount: 11900,
+      currency: 'GBP',
+      description: null,
+      createdAt: new Date(1767312000 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+    {
+      id: 'pi_789',
+      customerId: 'cus_123',
+      invoiceId: 'in_456',
+      status: 'incomplete',
+      amount: 8900,
+      currency: 'GBP',
+      description: 'Wegovy 0.25mg',
+      createdAt: new Date(1767398400 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+  ] satisfies Payment[],
   PRODUCT,
   EXPECTED_PRODUCT: {
     id: 'prod_123',

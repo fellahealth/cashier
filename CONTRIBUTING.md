@@ -52,9 +52,9 @@ Each provider is a driver in `packages/cashier/src/drivers/<provider>/`. The Str
 
 1. Add a member to the `CashierProvider` enum (for example `Paddle = 'paddle'`) and the provider's options to `CashierProviderOptions` in `packages/cashier/src/types/cashier.types.ts`.
 2. Create the driver folder:
-   - `<provider>.driver.ts`: a class that implements `CashierDriver` and creates the five resources.
-   - `resources/`: one class per resource, implementing `CustomersResource`, `InvoicesResource`, `ProductsResource`, `PricesResource` and `SubscriptionsResource`.
-   - `mappers/`: functions that turn the provider's objects into Cashier's `Customer`, `Invoice`, `Product`, `Price` and `Subscription`.
+   - `<provider>.driver.ts`: a class that implements `CashierDriver` and creates the six resources.
+   - `resources/`: one class per resource, implementing `CustomersResource`, `InvoicesResource`, `PaymentsResource`, `ProductsResource`, `PricesResource` and `SubscriptionsResource`.
+   - `mappers/`: functions that turn the provider's objects into Cashier's `Customer`, `Invoice`, `Payment`, `Product`, `Price` and `Subscription`.
    - `<provider>-error.mapper.ts` and `<provider>-request.ts`: map every provider error to a `CashierError` subclass, and wrap every call with that mapping.
 3. Register the driver in `createDriver` in `packages/cashier/src/drivers/create-driver.ts`.
 4. Add the provider's official SDK to `peerDependencies` in `packages/cashier/package.json`, and to `devDependencies` in the root `package.json`.
