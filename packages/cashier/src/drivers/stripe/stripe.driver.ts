@@ -7,7 +7,7 @@ import { StripeProductsResource } from './resources/stripe-products.resource';
 import { StripePricesResource } from './resources/stripe-prices.resource';
 import { StripeSubscriptionsResource } from './resources/stripe-subscriptions.resource';
 
-export class StripeDriver implements CashierDriver {
+export class StripeDriver implements CashierDriver<CashierProvider.Stripe> {
   readonly provider = CashierProvider.Stripe;
   readonly customers: StripeCustomersResource;
   readonly invoices: StripeInvoicesResource;

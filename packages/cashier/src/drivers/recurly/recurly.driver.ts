@@ -7,7 +7,7 @@ import { RecurlyProductsResource } from './resources/recurly-products.resource';
 import { RecurlyPricesResource } from './resources/recurly-prices.resource';
 import { RecurlySubscriptionsResource } from './resources/recurly-subscriptions.resource';
 
-export class RecurlyDriver implements CashierDriver {
+export class RecurlyDriver implements CashierDriver<CashierProvider.Recurly> {
   readonly provider = CashierProvider.Recurly;
   readonly customers: RecurlyCustomersResource;
   readonly invoices: RecurlyInvoicesResource;

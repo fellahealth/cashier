@@ -1,7 +1,11 @@
 import Stripe from 'stripe';
 import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
-import { Payment } from '../../src/types/payment.types';
+import {
+  Payment,
+  PaymentRelation,
+  PaymentWith,
+} from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Price } from '../../src/types/price.types';
 import { Subscription } from '../../src/types/subscription.types';
@@ -18,7 +22,11 @@ const SUBSCRIPTION_INVOICE = {
   subtotal: 15000,
   tax: null,
   total: 15000,
+  charge: { id: 'ch_123', amount_refunded: 5000 },
+  attempt_count: 1,
+  hosted_invoice_url: 'https://invoice.stripe.com/i/in_123',
   created: 1767225600,
+  due_date: null,
   status_transitions: { paid_at: 1767229200 },
 } as unknown as Stripe.Invoice;
 
@@ -33,7 +41,11 @@ const EXPANDED_DRAFT_INVOICE = {
   subtotal: 5000,
   tax: 1000,
   total: 6000,
+  charge: null,
+  attempt_count: 0,
+  hosted_invoice_url: null,
   created: 1767312000,
+  due_date: 1767916800,
   status_transitions: { paid_at: null },
 } as unknown as Stripe.Invoice;
 
@@ -113,10 +125,35 @@ const DELETED_CUSTOMER = {
   deleted: true,
 } as unknown as Stripe.DeletedCustomer;
 
+const DISPUTE = {
+  id: 'dp_123',
+  status: 'needs_response',
+  reason: 'fraudulent',
+  created: 1767398400,
+  evidence_details: { due_by: 1768262400 },
+} as unknown as Stripe.Dispute;
+
+const REFUNDED_CHARGE = {
+  id: 'ch_123',
+  amount_refunded: 4000,
+  receipt_url: 'https://pay.stripe.com/receipts/ch_123',
+  dispute: DISPUTE,
+  refunds: {
+    data: [
+      { id: 're_1', destination_details: { card: { type: 'refund' } } },
+      { id: 're_2', destination_details: { card: { type: 'reversal' } } },
+    ],
+  },
+} as unknown as Stripe.Charge;
+
 const SUCCEEDED_PAYMENT_INTENT = {
   id: 'pi_123',
   customer: 'cus_123',
-  invoice: 'in_123',
+  invoice: {
+    id: 'in_123',
+    subscription: { ...SUBSCRIPTION, cancel_at_period_end: true },
+  },
+  latest_charge: REFUNDED_CHARGE,
   status: 'succeeded',
   amount: 12900,
   currency: 'gbp',
@@ -129,6 +166,7 @@ const FAILED_PAYMENT_INTENT = {
   id: 'pi_456',
   customer: { id: 'cus_123' },
   invoice: null,
+  latest_charge: null,
   status: 'requires_payment_method',
   amount: 11900,
   currency: 'gbp',
@@ -140,7 +178,8 @@ const FAILED_PAYMENT_INTENT = {
 const INCOMPLETE_PAYMENT_INTENT = {
   id: 'pi_789',
   customer: 'cus_123',
-  invoice: { id: 'in_456' },
+  invoice: { id: 'in_456', subscription: 'sub_456' },
+  latest_charge: 'ch_789',
   status: 'requires_action',
   amount: 8900,
   currency: 'gbp',
@@ -184,7 +223,10 @@ export const STRIPE_FIXTURES = {
       subtotal: 15000,
       tax: 0,
       total: 15000,
+      attemptCount: 1,
+      hostedInvoiceUrl: 'https://invoice.stripe.com/i/in_123',
       createdAt: new Date(1767225600 * 1000),
+      dueDate: null,
       paidAt: new Date(1767229200 * 1000),
       provider: CashierProvider.Stripe,
     },
@@ -199,11 +241,18 @@ export const STRIPE_FIXTURES = {
       subtotal: 5000,
       tax: 1000,
       total: 6000,
+      attemptCount: 0,
+      hostedInvoiceUrl: null,
       createdAt: new Date(1767312000 * 1000),
+      dueDate: new Date(1767916800 * 1000),
       paidAt: null,
       provider: CashierProvider.Stripe,
     },
   ] satisfies Invoice[],
+  PAYMENT_CURSOR: 'pi_123',
+  REFUNDED_CHARGE,
+  DISPUTE,
+  SUCCEEDED_PAYMENT_INTENT,
   PAYMENT_INTENTS: [
     SUCCEEDED_PAYMENT_INTENT,
     FAILED_PAYMENT_INTENT,
@@ -244,6 +293,66 @@ export const STRIPE_FIXTURES = {
       provider: CashierProvider.Stripe,
     },
   ] satisfies Payment[],
+  EXPECTED_PAYMENTS_WITH_RELATIONS: [
+    {
+      id: 'pi_123',
+      customerId: 'cus_123',
+      invoiceId: 'in_123',
+      status: 'succeeded',
+      amount: 12900,
+      amountRefunded: 4000,
+      currency: 'GBP',
+      description: 'Wegovy 0.5mg',
+      dispute: {
+        id: 'dp_123',
+        status: 'needs_response',
+        reason: 'fraudulent',
+        createdAt: new Date(1767398400 * 1000),
+        evidenceDueBy: new Date(1768262400 * 1000),
+      },
+      receiptUrl: 'https://pay.stripe.com/receipts/ch_123',
+      reversed: true,
+      subscription: {
+        id: 'sub_123',
+        status: 'active',
+        cancelAt: new Date(1769904000 * 1000),
+      },
+      createdAt: new Date(1767225600 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+    {
+      id: 'pi_456',
+      customerId: 'cus_123',
+      invoiceId: null,
+      status: 'failed',
+      amount: 11900,
+      amountRefunded: 0,
+      currency: 'GBP',
+      description: null,
+      dispute: null,
+      receiptUrl: null,
+      reversed: false,
+      subscription: null,
+      createdAt: new Date(1767312000 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+    {
+      id: 'pi_789',
+      customerId: 'cus_123',
+      invoiceId: 'in_456',
+      status: 'incomplete',
+      amount: 8900,
+      amountRefunded: 0,
+      currency: 'GBP',
+      description: 'Wegovy 0.25mg',
+      dispute: null,
+      receiptUrl: null,
+      reversed: false,
+      subscription: { id: 'sub_456', status: null, cancelAt: null },
+      createdAt: new Date(1767398400 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+  ] satisfies PaymentWith<PaymentRelation>[],
   PRODUCT,
   EXPECTED_PRODUCT: {
     id: 'prod_123',

@@ -51,13 +51,15 @@ await cashier
   .customers.get('cus_456');
 ```
 
-| Call                                      | Returns                                     |
-| ----------------------------------------- | ------------------------------------------- |
-| `use()`                                   | The driver for the `default` provider.      |
-| `use(CashierProvider.Recurly)`            | The driver for a provider in `providers`.   |
-| `use(CashierProvider.Stripe, { apiKey })` | A driver with credentials given at runtime. |
+| Call                                      | Returns                                                                                       |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `use()`                                   | The driver for the `default` provider, typed as `CashierDriver`.                              |
+| `use(CashierProvider.Recurly)`            | The driver for a provider in `providers`, typed as `CashierDriver<CashierProvider.Recurly>`.  |
+| `use(CashierProvider.Stripe, { apiKey })` | A driver with credentials given at runtime, typed as `CashierDriver<CashierProvider.Stripe>`. |
 
 Providers are named with the `CashierProvider` enum (`CashierProvider.Stripe`, `CashierProvider.Recurly`), so a plain string like `'stripe'` does not compile. The enum values are the strings `'stripe'` and `'recurly'`, which is also what `provider` holds on every result and error.
+
+A driver typed for one provider only accepts the relations that provider can load in `with`, such as `dispute` on Stripe. `CashierDriver`, which `use()` returns, accepts the relations every provider supports. See [Loading relations](payments.md#loading-relations-with-with).
 
 `cashier.defaultProvider` tells you which provider `use()` returns, or `null` when there is no default.
 

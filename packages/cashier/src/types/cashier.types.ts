@@ -32,11 +32,13 @@ export interface CashierConfig {
   providers?: CashierProvidersConfig;
 }
 
-export interface CashierDriver {
-  readonly provider: CashierProvider;
+export interface CashierDriver<
+  Provider extends CashierProvider = CashierProvider,
+> {
+  readonly provider: Provider;
   readonly customers: CustomersResource;
-  readonly invoices: InvoicesResource;
-  readonly payments: PaymentsResource;
+  readonly invoices: InvoicesResource<Provider>;
+  readonly payments: PaymentsResource<Provider>;
   readonly products: ProductsResource;
   readonly prices: PricesResource;
   readonly subscriptions: SubscriptionsResource;
