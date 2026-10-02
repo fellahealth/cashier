@@ -1,5 +1,6 @@
 import { StripeInvoicesResource } from '../../src/drivers/stripe/resources/stripe-invoices.resource';
 import { NotFoundError } from '../../src/errors/not-found.error';
+import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
 import { STRIPE_FIXTURES } from '../fixtures/stripe.fixtures';
 import {
   StripeClientMock,
@@ -28,9 +29,37 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.retrieve).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
-        { expand: ['charge'] },
+        {},
       );
       expect(invoice).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES[0]);
+    });
+
+    it('should expand the charge and add the refunded amount with refunds', async () => {
+      client.invoices.retrieve.mockResolvedValue(
+        STRIPE_FIXTURES.SUBSCRIPTION_INVOICE,
+      );
+
+      const invoice = await invoices.get(STRIPE_FIXTURES.INVOICE_ID, {
+        with: ['refunds'],
+      });
+
+      expect(client.invoices.retrieve).toHaveBeenCalledWith(
+        STRIPE_FIXTURES.INVOICE_ID,
+        { expand: ['charge'] },
+      );
+      expect(invoice).toEqual({
+        ...STRIPE_FIXTURES.EXPECTED_INVOICES[0],
+        amountRefunded: 5000,
+      });
+    });
+
+    it('should reject a relation Stripe does not support without calling Stripe', async () => {
+      await expect(
+        invoices.get(STRIPE_FIXTURES.INVOICE_ID, {
+          with: ['payments' as 'refunds'],
+        }),
+      ).rejects.toBeInstanceOf(UnsupportedOperationError);
+      expect(client.invoices.retrieve).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundError when the invoice does not exist', async () => {
@@ -62,7 +91,6 @@ describe('StripeInvoicesResource', () => {
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 100,
         status: 'paid',
-        expand: ['data.charge'],
       });
     });
 
@@ -74,7 +102,6 @@ describe('StripeInvoicesResource', () => {
       expect(client.invoices.list).toHaveBeenCalledWith({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 10,
-        expand: ['data.charge'],
       });
     });
 
@@ -90,6 +117,26 @@ describe('StripeInvoicesResource', () => {
       expect(result).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES);
     });
 
+    it('should expand the charges and add the refunded amounts with refunds', async () => {
+      client.invoices.list.mockResolvedValue({
+        data: STRIPE_FIXTURES.INVOICES,
+      });
+
+      const result = await invoices.list({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        with: ['refunds'],
+      });
+
+      expect(client.invoices.list).toHaveBeenCalledWith({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        limit: 100,
+        expand: ['data.charge'],
+      });
+      expect(result.map((invoice) => invoice.amountRefunded)).toEqual([
+        5000, 0,
+      ]);
+    });
+
     it('should count no refund when the charge is not expanded and no hosted url when it is missing', async () => {
       client.invoices.list.mockResolvedValue({
         data: [
@@ -103,6 +150,7 @@ describe('StripeInvoicesResource', () => {
 
       const [invoice] = await invoices.list({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        with: ['refunds'],
       });
 
       expect(invoice).toMatchObject({
@@ -123,6 +171,7 @@ describe('StripeInvoicesResource', () => {
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         status: 'paid',
         perPage: 2,
+        with: ['refunds'],
       });
 
       expect(client.invoices.list).toHaveBeenCalledWith({
@@ -132,7 +181,10 @@ describe('StripeInvoicesResource', () => {
         expand: ['data.charge'],
       });
       expect(page).toEqual({
-        data: STRIPE_FIXTURES.EXPECTED_INVOICES,
+        data: [
+          { ...STRIPE_FIXTURES.EXPECTED_INVOICES[0], amountRefunded: 5000 },
+          { ...STRIPE_FIXTURES.EXPECTED_INVOICES[1], amountRefunded: 0 },
+        ],
         perPage: 2,
         hasMorePages: true,
         nextCursor: 'in_456',
@@ -155,7 +207,6 @@ describe('StripeInvoicesResource', () => {
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 1,
         starting_after: 'in_000',
-        expand: ['data.charge'],
       });
       expect(page.nextCursor).toBe(STRIPE_FIXTURES.INVOICE_ID);
     });
@@ -191,10 +242,7 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.pay).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
-        {
-          payment_method: STRIPE_FIXTURES.PAYMENT_METHOD_ID,
-          expand: ['charge'],
-        },
+        { payment_method: STRIPE_FIXTURES.PAYMENT_METHOD_ID },
       );
       expect(invoice).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES[0]);
     });
@@ -208,7 +256,7 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.pay).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
-        { expand: ['charge'] },
+        {},
       );
     });
   });
@@ -223,7 +271,6 @@ describe('StripeInvoicesResource', () => {
 
       expect(client.invoices.voidInvoice).toHaveBeenCalledWith(
         STRIPE_FIXTURES.INVOICE_ID,
-        { expand: ['charge'] },
       );
       expect(invoice).toEqual(STRIPE_FIXTURES.EXPECTED_INVOICES[0]);
     });

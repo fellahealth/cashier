@@ -27,3 +27,19 @@ export const toStripeCursorPaginator = <Item extends { id: string }, Result>(
   hasMorePages: list.has_more,
   nextCursor: list.has_more ? (list.data.at(-1)?.id ?? null) : null,
 });
+
+export const toStripeExpand = <Relation extends string>(
+  relations: ReadonlySet<Relation>,
+  expandByRelation: Record<Relation, string[]>,
+  prefix = '',
+): { expand?: string[] } => {
+  const expand = [
+    ...new Set(
+      [...relations].flatMap((relation) =>
+        expandByRelation[relation].map((path) => `${prefix}${path}`),
+      ),
+    ),
+  ];
+
+  return expand.length > 0 ? { expand } : {};
+};

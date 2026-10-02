@@ -1,5 +1,10 @@
 import { CashierProvider } from './cashier.types';
 import { CursorPaginateParams, CursorPaginator } from './pagination.types';
+import {
+  LoadedRelations,
+  ProviderRelation,
+  WithParams,
+} from './relation.types';
 import { SubscriptionStatus } from './subscription.types';
 
 export type PaymentStatus =
@@ -35,25 +40,54 @@ export interface Payment {
   invoiceId: string | null;
   status: PaymentStatus;
   amount: number;
-  amountRefunded: number;
   currency: string;
   description: string | null;
-  dispute: PaymentDispute | null;
-  receiptUrl: string | null;
-  reversed: boolean;
-  subscription: PaymentSubscription | null;
   createdAt: Date;
   provider: CashierProvider;
 }
 
-export interface ListPaymentsParams {
+export interface PaymentRelationFields {
+  refunds: { amountRefunded: number };
+  dispute: { dispute: PaymentDispute | null };
+  receipt: { receiptUrl: string | null };
+  reversal: { reversed: boolean };
+  subscription: { subscription: PaymentSubscription | null };
+}
+
+export type PaymentRelation = keyof PaymentRelationFields;
+
+export interface CashierPaymentRelations {
+  stripe: 'refunds' | 'dispute' | 'receipt' | 'reversal' | 'subscription';
+  recurly: 'refunds' | 'subscription';
+}
+
+export type ProviderPaymentRelation<Provider extends CashierProvider> = Extract<
+  ProviderRelation<CashierPaymentRelations, Provider>,
+  PaymentRelation
+>;
+
+export type PaymentWith<Relation extends PaymentRelation = never> = Payment &
+  LoadedRelations<PaymentRelationFields, Relation>;
+
+export interface ListPaymentsParams<
+  Relation extends PaymentRelation = never,
+> extends WithParams<Relation> {
   customer: string;
   limit?: number;
 }
 
-export interface PaymentsResource {
-  list(params: ListPaymentsParams): Promise<Payment[]>;
-  cursorPaginate(
-    params: CursorPaginateParams,
-  ): Promise<CursorPaginator<Payment>>;
+export interface CursorPaginatePaymentsParams<
+  Relation extends PaymentRelation = never,
+>
+  extends CursorPaginateParams, WithParams<Relation> {}
+
+export interface PaymentsResource<
+  Provider extends CashierProvider = CashierProvider,
+> {
+  list<Relation extends ProviderPaymentRelation<Provider> = never>(
+    params: ListPaymentsParams<Relation>,
+  ): Promise<PaymentWith<Relation>[]>;
+  cursorPaginate<Relation extends ProviderPaymentRelation<Provider> = never>(
+    params: CursorPaginatePaymentsParams<Relation>,
+  ): Promise<CursorPaginator<PaymentWith<Relation>>>;
 }

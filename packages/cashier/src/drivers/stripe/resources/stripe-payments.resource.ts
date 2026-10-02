@@ -1,59 +1,84 @@
 import Stripe from 'stripe';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
+  CursorPaginatePaymentsParams,
   ListPaymentsParams,
-  Payment,
+  PaymentWith,
   PaymentsResource,
+  ProviderPaymentRelation,
 } from '../../../types/payment.types';
-import {
-  CursorPaginateParams,
-  CursorPaginator,
-} from '../../../types/pagination.types';
+import { CursorPaginator } from '../../../types/pagination.types';
 import {
   DEFAULT_LIST_LIMIT,
-  STRIPE_PAYMENT_LIST_EXPAND,
+  STRIPE_PAYMENT_RELATION_EXPAND,
 } from '../../../constants/cashier.constants';
+import { resolveRelations } from '../../../utils/relations.utils';
 import { mapStripePayment } from '../mappers/stripe-payment.mapper';
-import { toStripeCursorPaginator } from '../mappers/stripe-mapper.utils';
+import {
+  toStripeCursorPaginator,
+  toStripeExpand,
+} from '../mappers/stripe-mapper.utils';
 import { stripeRequest } from '../stripe-request';
 
-export class StripePaymentsResource implements PaymentsResource {
+type StripePaymentRelation = ProviderPaymentRelation<CashierProvider.Stripe>;
+
+const STRIPE_PAYMENT_RELATIONS: ReadonlySet<string> = new Set(
+  Object.keys(STRIPE_PAYMENT_RELATION_EXPAND),
+);
+
+export class StripePaymentsResource implements PaymentsResource<CashierProvider.Stripe> {
   constructor(private readonly client: Stripe) {}
 
-  async list({
+  async list<Relation extends StripePaymentRelation = never>({
     customer,
     limit = DEFAULT_LIST_LIMIT,
-  }: ListPaymentsParams): Promise<Payment[]> {
-    return (await this.fetch({ customer, limit }, limit)).data;
+    with: relations,
+  }: ListPaymentsParams<Relation>): Promise<PaymentWith<Relation>[]> {
+    return (await this.fetch<Relation>({ customer, limit }, limit, relations))
+      .data;
   }
 
-  cursorPaginate({
+  cursorPaginate<Relation extends StripePaymentRelation = never>({
     customer,
     perPage = DEFAULT_LIST_LIMIT,
     cursor,
-  }: CursorPaginateParams): Promise<CursorPaginator<Payment>> {
-    return this.fetch(
+    with: relations,
+  }: CursorPaginatePaymentsParams<Relation>): Promise<
+    CursorPaginator<PaymentWith<Relation>>
+  > {
+    return this.fetch<Relation>(
       {
         customer,
         limit: perPage,
         ...(cursor ? { starting_after: cursor } : {}),
       },
       perPage,
+      relations,
     );
   }
 
-  private fetch(
+  private fetch<Relation extends StripePaymentRelation>(
     params: Stripe.PaymentIntentListParams,
     perPage: number,
-  ): Promise<CursorPaginator<Payment>> {
-    return stripeRequest(async () =>
-      toStripeCursorPaginator(
+    requested?: readonly Relation[],
+  ): Promise<CursorPaginator<PaymentWith<Relation>>> {
+    return stripeRequest(async () => {
+      const relations = resolveRelations(
+        CashierProvider.Stripe,
+        'payments',
+        STRIPE_PAYMENT_RELATIONS,
+        requested,
+      );
+
+      return toStripeCursorPaginator(
         await this.client.paymentIntents.list({
           ...params,
-          expand: STRIPE_PAYMENT_LIST_EXPAND,
+          ...toStripeExpand(relations, STRIPE_PAYMENT_RELATION_EXPAND, 'data.'),
         }),
         perPage,
-        mapStripePayment,
-      ),
-    );
+        (paymentIntent) =>
+          mapStripePayment(paymentIntent, relations) as PaymentWith<Relation>,
+      );
+    });
   }
 }

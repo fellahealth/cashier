@@ -1,5 +1,6 @@
 import { StripePaymentsResource } from '../../src/drivers/stripe/resources/stripe-payments.resource';
 import { NotFoundError } from '../../src/errors/not-found.error';
+import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
 import { STRIPE_FIXTURES } from '../fixtures/stripe.fixtures';
 import {
   StripeClientMock,
@@ -8,6 +9,14 @@ import {
   createStripeMissingResourceError,
 } from '../fixtures/stripe-client.mock';
 import { CashierProvider } from '../../src/types/cashier.types';
+
+const RELATIONS = [
+  'refunds',
+  'dispute',
+  'receipt',
+  'reversal',
+  'subscription',
+] as const;
 
 const EXPAND = [
   'data.latest_charge',
@@ -27,6 +36,7 @@ describe('StripePaymentsResource', () => {
 
     const [payment] = await payments.list({
       customer: STRIPE_FIXTURES.CUSTOMER_ID,
+      with: RELATIONS,
     });
 
     return payment;
@@ -51,7 +61,7 @@ describe('StripePaymentsResource', () => {
   });
 
   describe('list', () => {
-    it('should request expanded payment intents with the default limit', async () => {
+    it('should request payment intents with the default limit and no expansions', async () => {
       client.paymentIntents.list.mockResolvedValue({ data: [] });
 
       await payments.list({ customer: STRIPE_FIXTURES.CUSTOMER_ID });
@@ -59,7 +69,6 @@ describe('StripePaymentsResource', () => {
       expect(client.paymentIntents.list).toHaveBeenCalledWith({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 100,
-        expand: EXPAND,
       });
     });
 
@@ -71,11 +80,10 @@ describe('StripePaymentsResource', () => {
       expect(client.paymentIntents.list).toHaveBeenCalledWith({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 10,
-        expand: EXPAND,
       });
     });
 
-    it('should map every payment intent, including missing and unexpanded charges and invoices', async () => {
+    it('should map every payment intent without relation fields by default', async () => {
       client.paymentIntents.list.mockResolvedValue({
         data: STRIPE_FIXTURES.PAYMENT_INTENTS,
       });
@@ -85,6 +93,67 @@ describe('StripePaymentsResource', () => {
       });
 
       expect(result).toEqual(STRIPE_FIXTURES.EXPECTED_PAYMENTS);
+    });
+
+    it('should expand and map every relation, including missing and unexpanded charges and invoices', async () => {
+      client.paymentIntents.list.mockResolvedValue({
+        data: STRIPE_FIXTURES.PAYMENT_INTENTS,
+      });
+
+      const result = await payments.list({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        with: RELATIONS,
+      });
+
+      expect(client.paymentIntents.list).toHaveBeenCalledWith({
+        customer: STRIPE_FIXTURES.CUSTOMER_ID,
+        limit: 100,
+        expand: EXPAND,
+      });
+      expect(result).toEqual(STRIPE_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS);
+    });
+
+    it.each([
+      ['refunds', ['data.latest_charge'], 'amountRefunded'],
+      ['dispute', ['data.latest_charge.dispute'], 'dispute'],
+      ['receipt', ['data.latest_charge'], 'receiptUrl'],
+      ['reversal', ['data.latest_charge.refunds'], 'reversed'],
+      ['subscription', ['data.invoice.subscription'], 'subscription'],
+    ] as const)(
+      'should only expand and add what the %s relation needs',
+      async (relation, expand, field) => {
+        client.paymentIntents.list.mockResolvedValue({
+          data: [STRIPE_FIXTURES.SUCCEEDED_PAYMENT_INTENT],
+        });
+
+        const [payment] = await payments.list({
+          customer: STRIPE_FIXTURES.CUSTOMER_ID,
+          with: [relation],
+        });
+
+        expect(client.paymentIntents.list).toHaveBeenCalledWith({
+          customer: STRIPE_FIXTURES.CUSTOMER_ID,
+          limit: 100,
+          expand,
+        });
+        expect(payment).toEqual({
+          ...STRIPE_FIXTURES.EXPECTED_PAYMENTS[0],
+          [field]: STRIPE_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS[0]?.[field],
+        });
+      },
+    );
+
+    it('should reject a relation Stripe does not support without calling Stripe', async () => {
+      await expect(
+        payments.list({
+          customer: STRIPE_FIXTURES.CUSTOMER_ID,
+          with: ['charges' as 'refunds'],
+        }),
+      ).rejects.toMatchObject({
+        constructor: UnsupportedOperationError,
+        provider: CashierProvider.Stripe,
+      });
+      expect(client.paymentIntents.list).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -125,6 +194,7 @@ describe('StripePaymentsResource', () => {
       const page = await payments.cursorPaginate({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         perPage: 3,
+        with: RELATIONS,
       });
 
       expect(client.paymentIntents.list).toHaveBeenCalledWith({
@@ -133,7 +203,7 @@ describe('StripePaymentsResource', () => {
         expand: EXPAND,
       });
       expect(page).toEqual({
-        data: STRIPE_FIXTURES.EXPECTED_PAYMENTS,
+        data: STRIPE_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS,
         perPage: 3,
         hasMorePages: true,
         nextCursor: 'pi_789',
@@ -156,7 +226,6 @@ describe('StripePaymentsResource', () => {
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 1,
         starting_after: 'pi_000',
-        expand: EXPAND,
       });
       expect(page.nextCursor).toBe(STRIPE_FIXTURES.PAYMENT_CURSOR);
     });
@@ -175,7 +244,6 @@ describe('StripePaymentsResource', () => {
       expect(client.paymentIntents.list).toHaveBeenCalledWith({
         customer: STRIPE_FIXTURES.CUSTOMER_ID,
         limit: 100,
-        expand: EXPAND,
       });
       expect(page).toMatchObject({
         perPage: 100,

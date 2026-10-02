@@ -62,11 +62,13 @@ export class Cashier {
   }
 
   use(): CashierDriver;
-  use(provider: CashierProvider): CashierDriver;
+  use<Provider extends CashierProvider>(
+    provider: Provider,
+  ): CashierDriver<Provider>;
   use<Provider extends CashierProvider>(
     provider: Provider,
     options: CashierProviderOptions[Provider],
-  ): CashierDriver;
+  ): CashierDriver<Provider>;
   use(
     provider?: CashierProvider,
     options?: CashierProviderOptions[CashierProvider],

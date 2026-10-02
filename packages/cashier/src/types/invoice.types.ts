@@ -1,5 +1,10 @@
 import { CashierProvider } from './cashier.types';
 import { CursorPaginateParams, CursorPaginator } from './pagination.types';
+import {
+  LoadedRelations,
+  ProviderRelation,
+  WithParams,
+} from './relation.types';
 
 export type InvoiceStatus =
   | 'draft'
@@ -23,7 +28,6 @@ export interface Invoice {
   subtotal: number;
   tax: number;
   total: number;
-  amountRefunded: number;
   attemptCount: number;
   hostedInvoiceUrl: string | null;
   createdAt: Date;
@@ -32,13 +36,40 @@ export interface Invoice {
   provider: CashierProvider;
 }
 
-export interface ListInvoicesParams {
+export interface InvoiceRelationFields {
+  refunds: { amountRefunded: number };
+}
+
+export type InvoiceRelation = keyof InvoiceRelationFields;
+
+export interface CashierInvoiceRelations {
+  stripe: 'refunds';
+  recurly: 'refunds';
+}
+
+export type ProviderInvoiceRelation<Provider extends CashierProvider> = Extract<
+  ProviderRelation<CashierInvoiceRelations, Provider>,
+  InvoiceRelation
+>;
+
+export type InvoiceWith<Relation extends InvoiceRelation = never> = Invoice &
+  LoadedRelations<InvoiceRelationFields, Relation>;
+
+export type GetInvoiceParams<Relation extends InvoiceRelation = never> =
+  WithParams<Relation>;
+
+export interface ListInvoicesParams<
+  Relation extends InvoiceRelation = never,
+> extends WithParams<Relation> {
   customer: string;
   status?: 'paid';
   limit?: number;
 }
 
-export interface CursorPaginateInvoicesParams extends CursorPaginateParams {
+export interface CursorPaginateInvoicesParams<
+  Relation extends InvoiceRelation = never,
+>
+  extends CursorPaginateParams, WithParams<Relation> {
   status?: 'paid';
 }
 
@@ -46,12 +77,19 @@ export interface PayInvoiceParams {
   paymentMethod?: string;
 }
 
-export interface InvoicesResource {
-  get(invoiceId: string): Promise<Invoice>;
-  list(params: ListInvoicesParams): Promise<Invoice[]>;
-  cursorPaginate(
-    params: CursorPaginateInvoicesParams,
-  ): Promise<CursorPaginator<Invoice>>;
+export interface InvoicesResource<
+  Provider extends CashierProvider = CashierProvider,
+> {
+  get<Relation extends ProviderInvoiceRelation<Provider> = never>(
+    invoiceId: string,
+    params?: GetInvoiceParams<Relation>,
+  ): Promise<InvoiceWith<Relation>>;
+  list<Relation extends ProviderInvoiceRelation<Provider> = never>(
+    params: ListInvoicesParams<Relation>,
+  ): Promise<InvoiceWith<Relation>[]>;
+  cursorPaginate<Relation extends ProviderInvoiceRelation<Provider> = never>(
+    params: CursorPaginateInvoicesParams<Relation>,
+  ): Promise<CursorPaginator<InvoiceWith<Relation>>>;
   pay(invoiceId: string, params?: PayInvoiceParams): Promise<Invoice>;
   void(invoiceId: string): Promise<Invoice>;
 }

@@ -4,8 +4,10 @@ import {
   Payment,
   PaymentDispute,
   PaymentDisputeStatus,
+  PaymentRelation,
   PaymentStatus,
   PaymentSubscription,
+  PaymentWith,
 } from '../../../types/payment.types';
 import { SubscriptionStatus } from '../../../types/subscription.types';
 import {
@@ -104,7 +106,8 @@ const mapStripePaymentSubscription = (
 
 export const mapStripePayment = (
   paymentIntent: Stripe.PaymentIntent,
-): Payment => {
+  relations: ReadonlySet<PaymentRelation> = new Set(),
+): Payment & Partial<PaymentWith<PaymentRelation>> => {
   const charge = getExpanded(
     paymentIntent.latest_charge as string | StripeCharge | null | undefined,
   );
@@ -115,14 +118,22 @@ export const mapStripePayment = (
     invoiceId: getExpandableId(paymentIntent.invoice),
     status: mapStripePaymentStatus(paymentIntent),
     amount: paymentIntent.amount,
-    amountRefunded: charge?.amount_refunded ?? 0,
     currency: paymentIntent.currency.toUpperCase(),
     description: paymentIntent.description,
-    dispute: mapStripeDispute(charge?.dispute),
-    receiptUrl: charge?.receipt_url ?? null,
-    reversed: isReversed(charge),
-    subscription: mapStripePaymentSubscription(paymentIntent.invoice),
     createdAt: new Date(paymentIntent.created * 1000),
     provider: CashierProvider.Stripe,
+    ...(relations.has('refunds')
+      ? { amountRefunded: charge?.amount_refunded ?? 0 }
+      : {}),
+    ...(relations.has('dispute')
+      ? { dispute: mapStripeDispute(charge?.dispute) }
+      : {}),
+    ...(relations.has('receipt')
+      ? { receiptUrl: charge?.receipt_url ?? null }
+      : {}),
+    ...(relations.has('reversal') ? { reversed: isReversed(charge) } : {}),
+    ...(relations.has('subscription')
+      ? { subscription: mapStripePaymentSubscription(paymentIntent.invoice) }
+      : {}),
   };
 };

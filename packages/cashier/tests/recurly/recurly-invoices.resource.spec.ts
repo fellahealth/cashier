@@ -2,6 +2,7 @@ import * as recurly from 'recurly';
 import { RecurlyInvoicesResource } from '../../src/drivers/recurly/resources/recurly-invoices.resource';
 import { NotFoundError } from '../../src/errors/not-found.error';
 import { ProviderError } from '../../src/errors/provider.error';
+import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
 import {
   RECURLY_FIXTURES,
   createFailingRecurlyPager,
@@ -35,6 +36,19 @@ describe('RecurlyInvoicesResource', () => {
         RECURLY_FIXTURES.INVOICE_ID,
       );
       expect(invoice).toEqual(RECURLY_FIXTURES.EXPECTED_INVOICES[0]);
+    });
+
+    it('should add the refunded amount with refunds', async () => {
+      client.getInvoice.mockResolvedValue(RECURLY_FIXTURES.PAID_INVOICE);
+
+      const invoice = await invoices.get(RECURLY_FIXTURES.INVOICE_ID, {
+        with: ['refunds'],
+      });
+
+      expect(invoice).toEqual({
+        ...RECURLY_FIXTURES.EXPECTED_INVOICES[0],
+        amountRefunded: 4999,
+      });
     });
 
     it('should throw NotFoundError with the provider status when the invoice does not exist', async () => {
@@ -113,9 +127,41 @@ describe('RecurlyInvoicesResource', () => {
 
       const [invoice] = await invoices.list({
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        with: ['refunds'],
       });
 
       expect(invoice?.amountRefunded).toBe(0);
+    });
+
+    it('should add the refunded amount of charge invoices in minor units with refunds', async () => {
+      client.listAccountInvoices.mockReturnValue(
+        createRecurlyPager([
+          ...RECURLY_FIXTURES.INVOICES,
+          RECURLY_FIXTURES.ZERO_DECIMAL_INVOICE,
+        ]),
+      );
+
+      const result = await invoices.list({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        with: ['refunds'],
+      });
+
+      expect(result.map((invoice) => invoice.amountRefunded)).toEqual([
+        4999, 0, 2000,
+      ]);
+    });
+
+    it('should reject a relation Recurly does not support without calling Recurly', async () => {
+      await expect(
+        invoices.list({
+          customer: RECURLY_FIXTURES.ACCOUNT_ID,
+          with: ['payments' as 'refunds'],
+        }),
+      ).rejects.toMatchObject({
+        constructor: UnsupportedOperationError,
+        provider: CashierProvider.Recurly,
+      });
+      expect(client.listAccountInvoices).not.toHaveBeenCalled();
     });
 
     it('should stop reading pages once the limit is reached', async () => {
@@ -155,6 +201,7 @@ describe('RecurlyInvoicesResource', () => {
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
         status: 'paid',
         perPage: 2,
+        with: ['refunds'],
       });
 
       expect(client.listAccountInvoices).toHaveBeenCalledWith(
@@ -162,7 +209,10 @@ describe('RecurlyInvoicesResource', () => {
         { params: { limit: 2, state: 'paid' } },
       );
       expect(page).toEqual({
-        data: RECURLY_FIXTURES.EXPECTED_INVOICES,
+        data: [
+          { ...RECURLY_FIXTURES.EXPECTED_INVOICES[0], amountRefunded: 4999 },
+          { ...RECURLY_FIXTURES.EXPECTED_INVOICES[1], amountRefunded: 0 },
+        ],
         perPage: 2,
         hasMorePages: true,
         nextCursor: RECURLY_FIXTURES.CURSOR,

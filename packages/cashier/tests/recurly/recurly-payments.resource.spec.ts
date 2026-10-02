@@ -1,5 +1,7 @@
 import { RecurlyPaymentsResource } from '../../src/drivers/recurly/resources/recurly-payments.resource';
 import { ProviderError } from '../../src/errors/provider.error';
+import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
+import { CashierProvider } from '../../src/types/cashier.types';
 import {
   RECURLY_FIXTURES,
   createFailingRecurlyPager,
@@ -11,6 +13,8 @@ import {
   asRecurlyClient,
   createRecurlyClientMock,
 } from '../fixtures/recurly-client.mock';
+
+const RELATIONS = ['refunds', 'subscription'] as const;
 
 describe('RecurlyPaymentsResource', () => {
   let client: RecurlyClientMock;
@@ -34,16 +38,30 @@ describe('RecurlyPaymentsResource', () => {
       );
     });
 
-    it('should map every transaction in minor units with its refunded amount', async () => {
+    it('should map every transaction in minor units without relation fields by default', async () => {
+      client.listAccountTransactions.mockReturnValue(
+        createRecurlyPager(RECURLY_FIXTURES.TRANSACTIONS),
+      );
+
+      const result = await payments.list({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+      });
+
+      expect(client.listAccountTransactions).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(RECURLY_FIXTURES.EXPECTED_PAYMENTS);
+    });
+
+    it('should add the refunded amounts and subscriptions with relations', async () => {
       client.listAccountTransactions
         .mockReturnValueOnce(createRecurlyPager(RECURLY_FIXTURES.TRANSACTIONS))
         .mockReturnValueOnce(createRecurlyPager(RECURLY_FIXTURES.REFUNDS));
 
       const result = await payments.list({
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        with: RELATIONS,
       });
 
-      expect(result).toEqual(RECURLY_FIXTURES.EXPECTED_PAYMENTS);
+      expect(result).toEqual(RECURLY_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS);
     });
 
     it('should list refunds created since the oldest refunded payment', async () => {
@@ -51,7 +69,10 @@ describe('RecurlyPaymentsResource', () => {
         .mockReturnValueOnce(createRecurlyPager(RECURLY_FIXTURES.TRANSACTIONS))
         .mockReturnValueOnce(createRecurlyPager([]));
 
-      await payments.list({ customer: RECURLY_FIXTURES.ACCOUNT_ID });
+      const [payment] = await payments.list({
+        customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        with: ['refunds'],
+      });
 
       expect(client.listAccountTransactions).toHaveBeenLastCalledWith(
         RECURLY_FIXTURES.ACCOUNT_ID,
@@ -63,6 +84,7 @@ describe('RecurlyPaymentsResource', () => {
           },
         },
       );
+      expect(payment?.amountRefunded).toBe(0);
     });
 
     it('should not list refunds when no payment was refunded', async () => {
@@ -72,23 +94,47 @@ describe('RecurlyPaymentsResource', () => {
 
       const result = await payments.list({
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        with: RELATIONS,
       });
 
       expect(client.listAccountTransactions).toHaveBeenCalledTimes(1);
-      expect(result).toEqual([RECURLY_FIXTURES.EXPECTED_PAYMENTS[1]]);
+      expect(result).toEqual([
+        RECURLY_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS[1],
+      ]);
     });
 
-    it('should count no refund when the refunds are not found', async () => {
-      client.listAccountTransactions
-        .mockReturnValueOnce(createRecurlyPager(RECURLY_FIXTURES.TRANSACTIONS))
-        .mockReturnValueOnce(createRecurlyPager([]));
+    it('should not list refunds when only the subscription is loaded', async () => {
+      client.listAccountTransactions.mockReturnValue(
+        createRecurlyPager(RECURLY_FIXTURES.TRANSACTIONS),
+      );
 
       const [payment] = await payments.list({
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
+        with: ['subscription'],
       });
 
-      expect(payment?.amountRefunded).toBe(0);
+      expect(client.listAccountTransactions).toHaveBeenCalledTimes(1);
+      expect(payment).toEqual({
+        ...RECURLY_FIXTURES.EXPECTED_PAYMENTS[0],
+        subscription: { id: 'rec_sub_1', status: null, cancelAt: null },
+      });
     });
+
+    it.each(['dispute', 'receipt', 'reversal'])(
+      'should reject the %s relation without calling Recurly',
+      async (relation) => {
+        await expect(
+          payments.list({
+            customer: RECURLY_FIXTURES.ACCOUNT_ID,
+            with: [relation as 'refunds'],
+          }),
+        ).rejects.toMatchObject({
+          constructor: UnsupportedOperationError,
+          provider: CashierProvider.Recurly,
+        });
+        expect(client.listAccountTransactions).not.toHaveBeenCalled();
+      },
+    );
 
     it.each([
       ['pending', 'pending'],
@@ -119,9 +165,12 @@ describe('RecurlyPaymentsResource', () => {
       const result = await payments.list({
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
         limit: 1,
+        with: RELATIONS,
       });
 
-      expect(result).toEqual([RECURLY_FIXTURES.EXPECTED_PAYMENTS[0]]);
+      expect(result).toEqual([
+        RECURLY_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS[0],
+      ]);
     });
 
     it('should map failures raised while paging', async () => {
@@ -142,7 +191,10 @@ describe('RecurlyPaymentsResource', () => {
         );
 
       await expect(
-        payments.list({ customer: RECURLY_FIXTURES.ACCOUNT_ID }),
+        payments.list({
+          customer: RECURLY_FIXTURES.ACCOUNT_ID,
+          with: RELATIONS,
+        }),
       ).rejects.toBeInstanceOf(ProviderError);
     });
   });
@@ -161,6 +213,7 @@ describe('RecurlyPaymentsResource', () => {
       const page = await payments.cursorPaginate({
         customer: RECURLY_FIXTURES.ACCOUNT_ID,
         perPage: 2,
+        with: RELATIONS,
       });
 
       expect(client.listAccountTransactions).toHaveBeenNthCalledWith(
@@ -169,7 +222,7 @@ describe('RecurlyPaymentsResource', () => {
         { params: { limit: 2, type: 'payment' } },
       );
       expect(page).toEqual({
-        data: RECURLY_FIXTURES.EXPECTED_PAYMENTS,
+        data: RECURLY_FIXTURES.EXPECTED_PAYMENTS_WITH_RELATIONS,
         perPage: 2,
         hasMorePages: true,
         nextCursor: RECURLY_FIXTURES.CURSOR,

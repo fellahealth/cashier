@@ -4,6 +4,7 @@
 
 - [`payments.list(params)`](#paymentslistparams)
 - [`payments.cursorPaginate(params)`](#paymentscursorpaginateparams)
+- [Loading relations with `with`](#loading-relations-with-with)
 - [The `Payment` object](#the-payment-object)
 
 ## `payments.list(params)`
@@ -14,10 +15,11 @@ Returns a customer's payments, newest first.
 const payments = await driver.payments.list({ customer: 'cus_123' });
 ```
 
-| Parameter  | Type     | Description                                    |
-| ---------- | -------- | ---------------------------------------------- |
-| `customer` | `string` | Required. The customer id.                     |
-| `limit`    | `number` | Maximum number of payments. Defaults to `100`. |
+| Parameter  | Type                | Description                                                               |
+| ---------- | ------------------- | ------------------------------------------------------------------------- |
+| `customer` | `string`            | Required. The customer id.                                                |
+| `limit`    | `number`            | Maximum number of payments. Defaults to `100`.                            |
+| `with`     | `PaymentRelation[]` | Relations to load. See [Loading relations](#loading-relations-with-with). |
 
 | Provider | Behavior                                                                                                                                                                       |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -41,11 +43,12 @@ const nextPayments = await driver.payments.cursorPaginate({
 });
 ```
 
-| Parameter  | Type             | Description                                                                         |
-| ---------- | ---------------- | ----------------------------------------------------------------------------------- |
-| `customer` | `string`         | Required. The customer id.                                                          |
-| `perPage`  | `number`         | Number of payments per page. Defaults to `100`.                                     |
-| `cursor`   | `string \| null` | The `nextCursor` of the previous page. Leave it out, or pass `null`, for the first. |
+| Parameter  | Type                | Description                                                                         |
+| ---------- | ------------------- | ----------------------------------------------------------------------------------- |
+| `customer` | `string`            | Required. The customer id.                                                          |
+| `perPage`  | `number`            | Number of payments per page. Defaults to `100`.                                     |
+| `cursor`   | `string \| null`    | The `nextCursor` of the previous page. Leave it out, or pass `null`, for the first. |
+| `with`     | `PaymentRelation[]` | Relations to load. See [Loading relations](#loading-relations-with-with).           |
 
 It returns a `CursorPaginator<Payment>`. See [Pagination and limits](drivers.md#pagination-and-limits).
 
@@ -54,34 +57,68 @@ It returns a `CursorPaginator<Payment>`. See [Pagination and limits](drivers.md#
 | Stripe   | Lists the customer's PaymentIntents after the cursor, which is the id of the last payment. The maximum `perPage` is 100. |
 | Recurly  | Lists the account's payment transactions with Recurly's own cursor. The maximum `perPage` is 200.                        |
 
+## Loading relations with `with`
+
+A payment has only its own fields by default. Pass `with` to load related data, as with Eloquent's `with`. Each relation adds one field, and costs only what it needs:
+
+```ts
+const payments = await cashier
+  .use(CashierProvider.Stripe)
+  .payments.cursorPaginate({
+    customer: 'cus_123',
+    perPage: 25,
+    with: ['refunds', 'dispute', 'subscription'],
+  });
+
+payments.data[0].amountRefunded;
+payments.data[0].dispute;
+```
+
+| Relation       | Adds             | Stripe                          | Recurly                                                                                 |
+| -------------- | ---------------- | ------------------------------- | --------------------------------------------------------------------------------------- |
+| `refunds`      | `amountRefunded` | Expands `latest_charge`         | One more request for the account's refunds, only when a payment on the page is refunded |
+| `dispute`      | `dispute`        | Expands `latest_charge.dispute` | Not available                                                                           |
+| `receipt`      | `receiptUrl`     | Expands `latest_charge`         | Not available                                                                           |
+| `reversal`     | `reversed`       | Expands `latest_charge.refunds` | Not available                                                                           |
+| `subscription` | `subscription`   | Expands `invoice.subscription`  | No extra cost                                                                           |
+
+Stripe expansions are part of the same request, so they make the response bigger but add no requests. On Recurly, the refunds request lists the account's `refund` transactions created since the oldest refunded payment on the page.
+
+The relations each provider supports are typed in `CashierPaymentRelations`, so the compiler only accepts what the driver can load:
+
+| Driver                                              | Accepted relations                                               |
+| --------------------------------------------------- | ---------------------------------------------------------------- |
+| `cashier.use(CashierProvider.Stripe)`               | `refunds`, `dispute`, `receipt`, `reversal`, `subscription`      |
+| `cashier.use(CashierProvider.Recurly)`              | `refunds`, `subscription`                                        |
+| `cashier.use()`, or `use(provider)` with a variable | The relations every provider supports: `refunds`, `subscription` |
+
+The result type only has the fields you loaded, so reading `receiptUrl` without `with: ['receipt']` does not compile. When a relation reaches a driver that cannot load it, for example from plain JavaScript, the call rejects with `UnsupportedOperationError` before any request is made.
+
 ## The `Payment` object
 
-| Field            | Type                          | Description                                               |
-| ---------------- | ----------------------------- | --------------------------------------------------------- |
-| `id`             | `string`                      | The provider's id.                                        |
-| `customerId`     | `string \| null`              | The customer or account id.                               |
-| `invoiceId`      | `string \| null`              | The invoice it paid, when there is one.                   |
-| `status`         | `PaymentStatus`               | See below.                                                |
-| `amount`         | `number`                      | In minor units.                                           |
-| `amountRefunded` | `number`                      | In minor units. `0` when nothing was refunded.            |
-| `currency`       | `string`                      | Uppercase ISO 4217 code.                                  |
-| `description`    | `string \| null`              | The payment's description, when it has one.               |
-| `dispute`        | `PaymentDispute \| null`      | The dispute on the payment, when there is one. See below. |
-| `receiptUrl`     | `string \| null`              | The receipt page, when the provider has one.              |
-| `reversed`       | `boolean`                     | `true` when a refund went back to the card as a reversal. |
-| `subscription`   | `PaymentSubscription \| null` | The subscription the payment's invoice billed. See below. |
-| `createdAt`      | `Date`                        | When the payment was created.                             |
-| `provider`       | `CashierProvider`             | The provider it came from.                                |
+| Field         | Type              | Description                                 |
+| ------------- | ----------------- | ------------------------------------------- |
+| `id`          | `string`          | The provider's id.                          |
+| `customerId`  | `string \| null`  | The customer or account id.                 |
+| `invoiceId`   | `string \| null`  | The invoice it paid, when there is one.     |
+| `status`      | `PaymentStatus`   | See below.                                  |
+| `amount`      | `number`          | In minor units.                             |
+| `currency`    | `string`          | Uppercase ISO 4217 code.                    |
+| `description` | `string \| null`  | The payment's description, when it has one. |
+| `createdAt`   | `Date`            | When the payment was created.               |
+| `provider`    | `CashierProvider` | The provider it came from.                  |
 
-| Field            | Stripe                                                                                  | Recurly                                                                                                      |
-| ---------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `amountRefunded` | The latest charge's `amount_refunded`                                                   | The sum of the account's successful and pending `refund` transactions whose original transaction is this one |
-| `dispute`        | The latest charge's dispute                                                             | Always `null`. Recurly transactions have no dispute.                                                         |
-| `receiptUrl`     | The latest charge's `receipt_url`                                                       | Always `null`                                                                                                |
-| `reversed`       | `true` when one of the latest charge's refunds has the card destination type `reversal` | Always `false`                                                                                               |
-| `subscription`   | The invoice's subscription, with its `status` and `cancelAt`                            | The transaction's first subscription id, with `status` and `cancelAt` set to `null`                          |
+These fields are added by `with`:
 
-On Stripe, Cashier expands `latest_charge`, its `dispute` and `refunds`, and `invoice.subscription` in the same request, so these fields cost no extra requests. On Recurly, a page with a refunded payment (`refunded` is `true`) makes one more request for the account's refunds created since the oldest refunded payment on the page. A page with no refunded payment makes no extra request.
+| Field            | Type                          | Relation       | Stripe                                                                                  | Recurly                                                                                                          |
+| ---------------- | ----------------------------- | -------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `amountRefunded` | `number`                      | `refunds`      | The latest charge's `amount_refunded`                                                   | The sum of the account's successful and pending `refund` transactions whose original transaction is this payment |
+| `dispute`        | `PaymentDispute \| null`      | `dispute`      | The latest charge's dispute                                                             |                                                                                                                  |
+| `receiptUrl`     | `string \| null`              | `receipt`      | The latest charge's `receipt_url`                                                       |                                                                                                                  |
+| `reversed`       | `boolean`                     | `reversal`     | `true` when one of the latest charge's refunds has the card destination type `reversal` |                                                                                                                  |
+| `subscription`   | `PaymentSubscription \| null` | `subscription` | The invoice's subscription, with its `status` and `cancelAt`                            | The transaction's first subscription id, with `status` and `cancelAt` set to `null`                              |
+
+Amounts are in minor units. `amountRefunded` is `0` when nothing was refunded.
 
 ### Payment status
 

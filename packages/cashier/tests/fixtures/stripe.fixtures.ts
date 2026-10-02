@@ -1,7 +1,11 @@
 import Stripe from 'stripe';
 import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
-import { Payment } from '../../src/types/payment.types';
+import {
+  Payment,
+  PaymentRelation,
+  PaymentWith,
+} from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Price } from '../../src/types/price.types';
 import { Subscription } from '../../src/types/subscription.types';
@@ -219,7 +223,6 @@ export const STRIPE_FIXTURES = {
       subtotal: 15000,
       tax: 0,
       total: 15000,
-      amountRefunded: 5000,
       attemptCount: 1,
       hostedInvoiceUrl: 'https://invoice.stripe.com/i/in_123',
       createdAt: new Date(1767225600 * 1000),
@@ -238,7 +241,6 @@ export const STRIPE_FIXTURES = {
       subtotal: 5000,
       tax: 1000,
       total: 6000,
-      amountRefunded: 0,
       attemptCount: 0,
       hostedInvoiceUrl: null,
       createdAt: new Date(1767312000 * 1000),
@@ -257,6 +259,41 @@ export const STRIPE_FIXTURES = {
     INCOMPLETE_PAYMENT_INTENT,
   ],
   EXPECTED_PAYMENTS: [
+    {
+      id: 'pi_123',
+      customerId: 'cus_123',
+      invoiceId: 'in_123',
+      status: 'succeeded',
+      amount: 12900,
+      currency: 'GBP',
+      description: 'Wegovy 0.5mg',
+      createdAt: new Date(1767225600 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+    {
+      id: 'pi_456',
+      customerId: 'cus_123',
+      invoiceId: null,
+      status: 'failed',
+      amount: 11900,
+      currency: 'GBP',
+      description: null,
+      createdAt: new Date(1767312000 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+    {
+      id: 'pi_789',
+      customerId: 'cus_123',
+      invoiceId: 'in_456',
+      status: 'incomplete',
+      amount: 8900,
+      currency: 'GBP',
+      description: 'Wegovy 0.25mg',
+      createdAt: new Date(1767398400 * 1000),
+      provider: CashierProvider.Stripe,
+    },
+  ] satisfies Payment[],
+  EXPECTED_PAYMENTS_WITH_RELATIONS: [
     {
       id: 'pi_123',
       customerId: 'cus_123',
@@ -315,7 +352,7 @@ export const STRIPE_FIXTURES = {
       createdAt: new Date(1767398400 * 1000),
       provider: CashierProvider.Stripe,
     },
-  ] satisfies Payment[],
+  ] satisfies PaymentWith<PaymentRelation>[],
   PRODUCT,
   EXPECTED_PRODUCT: {
     id: 'prod_123',

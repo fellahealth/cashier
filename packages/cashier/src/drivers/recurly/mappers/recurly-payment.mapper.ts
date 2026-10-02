@@ -2,8 +2,10 @@ import * as recurly from 'recurly';
 import { CashierProvider } from '../../../types/cashier.types';
 import {
   Payment,
+  PaymentRelation,
   PaymentStatus,
   PaymentSubscription,
+  PaymentWith,
 } from '../../../types/payment.types';
 import { toMinorUnits } from '../../../utils/money.utils';
 
@@ -31,8 +33,9 @@ const mapRecurlyPaymentSubscription = (
 
 export const mapRecurlyPayment = (
   transaction: recurly.Transaction,
+  relations: ReadonlySet<PaymentRelation> = new Set(),
   amountRefunded = 0,
-): Payment => {
+): Payment & Partial<PaymentWith<PaymentRelation>> => {
   const currency = (transaction.currency ?? '').toUpperCase();
 
   return {
@@ -41,15 +44,18 @@ export const mapRecurlyPayment = (
     invoiceId: transaction.invoice?.id ?? null,
     status: mapRecurlyPaymentStatus(transaction.status),
     amount: toMinorUnits(transaction.amount ?? 0, currency),
-    amountRefunded,
     currency,
     description: transaction.description ?? null,
-    dispute: null,
-    receiptUrl: null,
-    reversed: false,
-    subscription: mapRecurlyPaymentSubscription(transaction.subscriptionIds),
     createdAt: transaction.createdAt ?? new Date(0),
     provider: CashierProvider.Recurly,
+    ...(relations.has('refunds') ? { amountRefunded } : {}),
+    ...(relations.has('subscription')
+      ? {
+          subscription: mapRecurlyPaymentSubscription(
+            transaction.subscriptionIds,
+          ),
+        }
+      : {}),
   };
 };
 

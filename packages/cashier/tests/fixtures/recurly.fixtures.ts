@@ -1,7 +1,7 @@
 import * as recurly from 'recurly';
 import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
-import { Payment } from '../../src/types/payment.types';
+import { Payment, PaymentWith } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Subscription } from '../../src/types/subscription.types';
 import { CashierProvider } from '../../src/types/cashier.types';
@@ -244,12 +244,33 @@ export const RECURLY_FIXTURES = {
       invoiceId: 'rec_inv_1',
       status: 'succeeded',
       amount: 12900,
+      currency: 'GBP',
+      description: 'Wegovy 0.5mg',
+      createdAt: new Date('2026-01-01T00:00:00Z'),
+      provider: CashierProvider.Recurly,
+    },
+    {
+      id: 'rec_txn_2',
+      customerId: 'acct_1',
+      invoiceId: null,
+      status: 'failed',
+      amount: 5000,
+      currency: 'JPY',
+      description: null,
+      createdAt: new Date('2026-01-02T00:00:00Z'),
+      provider: CashierProvider.Recurly,
+    },
+  ] satisfies Payment[],
+  EXPECTED_PAYMENTS_WITH_RELATIONS: [
+    {
+      id: 'rec_txn_1',
+      customerId: 'acct_1',
+      invoiceId: 'rec_inv_1',
+      status: 'succeeded',
+      amount: 12900,
       amountRefunded: 4550,
       currency: 'GBP',
       description: 'Wegovy 0.5mg',
-      dispute: null,
-      receiptUrl: null,
-      reversed: false,
       subscription: { id: 'rec_sub_1', status: null, cancelAt: null },
       createdAt: new Date('2026-01-01T00:00:00Z'),
       provider: CashierProvider.Recurly,
@@ -263,14 +284,11 @@ export const RECURLY_FIXTURES = {
       amountRefunded: 0,
       currency: 'JPY',
       description: null,
-      dispute: null,
-      receiptUrl: null,
-      reversed: false,
       subscription: null,
       createdAt: new Date('2026-01-02T00:00:00Z'),
       provider: CashierProvider.Recurly,
     },
-  ] satisfies Payment[],
+  ] satisfies PaymentWith<'refunds' | 'subscription'>[],
   EXPECTED_INVOICES: [
     {
       id: 'rec_inv_1',
@@ -283,7 +301,6 @@ export const RECURLY_FIXTURES = {
       subtotal: 14999,
       tax: 0,
       total: 14999,
-      amountRefunded: 4999,
       attemptCount: 0,
       hostedInvoiceUrl: null,
       createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -302,7 +319,6 @@ export const RECURLY_FIXTURES = {
       subtotal: 2000,
       tax: 150,
       total: 2150,
-      amountRefunded: 0,
       attemptCount: 0,
       hostedInvoiceUrl: null,
       createdAt: new Date('2026-01-02T00:00:00Z'),
@@ -322,7 +338,6 @@ export const RECURLY_FIXTURES = {
     subtotal: 5000,
     tax: 0,
     total: 5000,
-    amountRefunded: 2000,
     attemptCount: 0,
     hostedInvoiceUrl: null,
     createdAt: new Date('2026-01-03T00:00:00Z'),
