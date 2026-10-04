@@ -8,7 +8,11 @@ import {
 } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Price } from '../../src/types/price.types';
-import { Subscription } from '../../src/types/subscription.types';
+import {
+  Subscription,
+  SubscriptionRelation,
+  SubscriptionWith,
+} from '../../src/types/subscription.types';
 import { CashierProvider } from '../../src/types/cashier.types';
 
 const SUBSCRIPTION_INVOICE = {
@@ -87,7 +91,12 @@ const SUBSCRIPTION = {
     data: [
       {
         id: 'si_123',
-        price: { id: 'price_123', unit_amount: 29900 },
+        price: {
+          id: 'price_123',
+          unit_amount: 29900,
+          product: 'prod_123',
+          recurring: { interval: 'month', interval_count: 1 },
+        },
         quantity: 1,
       },
     ],
@@ -95,12 +104,49 @@ const SUBSCRIPTION = {
   currency: 'usd',
   current_period_start: 1767225600,
   current_period_end: 1769904000,
+  cancel_at: null,
   cancel_at_period_end: false,
   canceled_at: null,
   trial_end: null,
+  pause_collection: null,
+  discount: null,
   created: 1767225600,
   metadata: { source: 'checkout' },
 } as unknown as Stripe.Subscription;
+
+const PAUSED_DISCOUNTED_SUBSCRIPTION = {
+  ...SUBSCRIPTION,
+  id: 'sub_456',
+  status: 'paused',
+  items: {
+    data: [
+      {
+        id: 'si_456',
+        price: {
+          id: 'price_456',
+          unit_amount: 299000,
+          product: { id: 'prod_456' },
+          recurring: { interval: 'year', interval_count: 1 },
+        },
+        quantity: 1,
+      },
+    ],
+  },
+  pause_collection: { behavior: 'void', resumes_at: 1769904000 },
+  discount: {
+    coupon: {
+      id: 'WELCOME10',
+      name: 'Welcome',
+      amount_off: null,
+      percent_off: 10,
+    },
+  },
+} as unknown as Stripe.Subscription;
+
+const SUBSCRIPTION_PRODUCTS = [
+  { id: 'prod_123', name: 'Pro Plan' },
+  { id: 'prod_456', name: 'Pro Annual' },
+] as unknown as Stripe.Product[];
 
 const MULTI_ITEM_SUBSCRIPTION = {
   ...SUBSCRIPTION,
@@ -400,10 +446,30 @@ export const STRIPE_FIXTURES = {
     currentPeriodStart: new Date(1767225600 * 1000),
     currentPeriodEnd: new Date(1769904000 * 1000),
     cancelAtPeriodEnd: false,
+    cancelAt: null,
     canceledAt: null,
     trialEnd: null,
     createdAt: new Date(1767225600 * 1000),
     metadata: { source: 'checkout' },
     provider: CashierProvider.Stripe,
   } satisfies Subscription,
+  PAUSED_DISCOUNTED_SUBSCRIPTION,
+  SUBSCRIPTION_PRODUCTS,
+  EXPECTED_SUBSCRIPTION_RELATIONS: {
+    product: { id: 'prod_123', name: 'Pro Plan' },
+    interval: { unit: 'month', count: 1 },
+    pause: null,
+    discount: null,
+  } satisfies Omit<SubscriptionWith<SubscriptionRelation>, keyof Subscription>,
+  EXPECTED_PAUSED_DISCOUNTED_SUBSCRIPTION_RELATIONS: {
+    product: { id: 'prod_456', name: 'Pro Annual' },
+    interval: { unit: 'year', count: 1 },
+    pause: { behavior: 'void', resumesAt: new Date(1769904000 * 1000) },
+    discount: {
+      couponId: 'WELCOME10',
+      name: 'Welcome',
+      amountOff: null,
+      percentOff: 10,
+    },
+  } satisfies Omit<SubscriptionWith<SubscriptionRelation>, keyof Subscription>,
 };

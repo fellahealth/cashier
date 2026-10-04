@@ -67,7 +67,7 @@ Every `list` method takes an optional `limit`, which defaults to `100`.
 | Stripe   | Returns a single page of up to `limit` results. Stripe accepts at most 100.   |
 | Recurly  | Reads pages until `limit` results are collected. Recurly accepts at most 200. |
 
-`payments` and `invoices` also have `cursorPaginate`, which returns one page at a time:
+`payments`, `invoices` and `subscriptions` also have `cursorPaginate`, which returns one page at a time:
 
 ```ts
 const page = await driver.payments.cursorPaginate({
@@ -90,4 +90,4 @@ The cursor is opaque. On Stripe it is the id of the page's last item, and on Rec
 
 ## TypeScript
 
-The package exports every type it uses: `CashierDriver` (and `CashierDriver<Provider>` for one provider), `CashierProvider`, `CashierProviderOptions`, the relations each provider supports (`CashierPaymentRelations`, `CashierInvoiceRelations`), the result types with relations (`PaymentWith<Relation>`, `InvoiceWith<Relation>`), the resource interfaces (`CustomersResource`, `InvoicesResource`, `PaymentsResource`, `ProductsResource`, `PricesResource`, `SubscriptionsResource`), the result types (`Customer`, `Invoice`, `Payment`, `PaymentDispute`, `PaymentSubscription`, `Product`, `Price`, `Subscription`), `CursorPaginator` and the parameter types such as `CreateSubscriptionParams` and `CursorPaginateParams`.
+The package exports every type it uses: `CashierDriver` (and `CashierDriver<Provider>` for one provider), `CashierProvider`, `CashierProviderOptions`, the relations each provider supports (`CashierPaymentRelations`, `CashierInvoiceRelations`, `CashierSubscriptionRelations`), the result types with relations (`PaymentWith<Relation>`, `InvoiceWith<Relation>`, `SubscriptionWith<Relation>`), the resource interfaces (`CustomersResource`, `InvoicesResource`, `PaymentsResource`, `ProductsResource`, `PricesResource`, `SubscriptionsResource`), the result types (`Customer`, `Invoice`, `Payment`, `PaymentDispute`, `PaymentSubscription`, `Product`, `Price`, `Subscription`), `CursorPaginator` and the parameter types such as `CreateSubscriptionParams` and `CursorPaginateParams`.

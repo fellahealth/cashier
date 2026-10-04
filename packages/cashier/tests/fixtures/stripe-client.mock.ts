@@ -25,6 +25,7 @@ export const createStripeClientMock = () => ({
     list: jest.fn(),
   },
   subscriptions: {
+    list: jest.fn(),
     create: jest.fn(),
     retrieve: jest.fn(),
     update: jest.fn(),

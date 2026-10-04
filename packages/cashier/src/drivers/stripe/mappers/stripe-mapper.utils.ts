@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { CursorPaginator } from '../../../types/pagination.types';
+import { BillingInterval } from '../../../types/price.types';
 
 export const getExpandableId = (
   value: string | { id: string } | null | undefined,
@@ -16,6 +17,13 @@ export const getExpanded = <Value extends object>(
 export const fromUnixSeconds = (
   unixSeconds: number | null | undefined,
 ): Date | null => (unixSeconds ? new Date(unixSeconds * 1000) : null);
+
+export const toStripeInterval = (
+  recurring: Stripe.Price.Recurring | null | undefined,
+): BillingInterval | null =>
+  recurring
+    ? { unit: recurring.interval, count: recurring.interval_count }
+    : null;
 
 export const toStripeCursorPaginator = <Item extends { id: string }, Result>(
   list: Stripe.ApiList<Item>,

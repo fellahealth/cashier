@@ -15,6 +15,7 @@ import {
   getExpandableId,
   getExpanded,
 } from './stripe-mapper.utils';
+import { getStripeCancelAt } from './stripe-subscription.mapper';
 
 type StripeRefund = Stripe.Refund & {
   destination_details?: { card?: { type?: string | null } | null } | null;
@@ -96,11 +97,7 @@ const mapStripePaymentSubscription = (
   return {
     id: subscription.id,
     status: subscription.status satisfies SubscriptionStatus,
-    cancelAt:
-      fromUnixSeconds(subscription.cancel_at) ??
-      (subscription.cancel_at_period_end
-        ? fromUnixSeconds(subscription.current_period_end)
-        : null),
+    cancelAt: getStripeCancelAt(subscription),
   };
 };
 

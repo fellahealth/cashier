@@ -33,10 +33,13 @@ export const readRecurlyPage = async <Item>(
 export const readRecurlyItems = async <Item>(
   pager: recurly.Pager<Item>,
   limit = Infinity,
+  include: (item: Item) => boolean = () => true,
 ): Promise<Item[]> => {
   const items: Item[] = [];
 
   for await (const item of pager.each()) {
+    if (!include(item)) continue;
+
     items.push(item);
 
     if (items.length >= limit) break;

@@ -1,20 +1,101 @@
 import * as recurly from 'recurly';
+import { CashierProvider } from '../../../types/cashier.types';
 import {
   CancelSubscriptionParams,
   CreateSubscriptionParams,
+  CursorPaginateSubscriptionsParams,
+  ListSubscriptionsParams,
+  ProviderSubscriptionRelation,
   Subscription,
+  SubscriptionStatusFilter,
+  SubscriptionWith,
   SubscriptionsResource,
   UpdateSubscriptionParams,
 } from '../../../types/subscription.types';
+import { CursorPaginator } from '../../../types/pagination.types';
+import {
+  DEFAULT_LIST_LIMIT,
+  RECURLY_SUBSCRIPTION_RELATIONS,
+  RECURLY_SUBSCRIPTION_STATE_FILTERS,
+} from '../../../constants/cashier.constants';
+import { resolveRelations } from '../../../utils/relations.utils';
 import {
   mapRecurlySubscription,
+  mapRecurlySubscriptionStatus,
   toRecurlyCustomFields,
 } from '../mappers/recurly-subscription.mapper';
 import { toRecurlyPlanReference } from '../recurly-plan-reference';
+import { readRecurlyItems, readRecurlyPage } from '../recurly-page';
 import { recurlyRequest } from '../recurly-request';
 
-export class RecurlySubscriptionsResource implements SubscriptionsResource {
+type RecurlySubscriptionRelation =
+  ProviderSubscriptionRelation<CashierProvider.Recurly>;
+
+const resolveSubscriptionRelations = (
+  requested?: readonly RecurlySubscriptionRelation[],
+): ReadonlySet<RecurlySubscriptionRelation> =>
+  resolveRelations(
+    CashierProvider.Recurly,
+    'subscriptions',
+    RECURLY_SUBSCRIPTION_RELATIONS,
+    requested,
+  );
+
+const hasStatus =
+  (status: SubscriptionStatusFilter) =>
+  (subscription: recurly.Subscription): boolean =>
+    status === 'all' ||
+    mapRecurlySubscriptionStatus(subscription.state) === status;
+
+export class RecurlySubscriptionsResource implements SubscriptionsResource<CashierProvider.Recurly> {
   constructor(private readonly client: recurly.Client) {}
+
+  list<Relation extends RecurlySubscriptionRelation = never>({
+    customer,
+    status = 'all',
+    limit = DEFAULT_LIST_LIMIT,
+    with: requested,
+  }: ListSubscriptionsParams<Relation>): Promise<SubscriptionWith<Relation>[]> {
+    return recurlyRequest(async () => {
+      const relations = resolveSubscriptionRelations(requested);
+
+      return this.map<Relation>(
+        await readRecurlyItems(
+          this.subscriptions(customer, limit, status),
+          limit,
+          hasStatus(status),
+        ),
+        relations,
+      );
+    });
+  }
+
+  cursorPaginate<Relation extends RecurlySubscriptionRelation = never>({
+    customer,
+    status = 'all',
+    perPage = DEFAULT_LIST_LIMIT,
+    cursor,
+    with: requested,
+  }: CursorPaginateSubscriptionsParams<Relation>): Promise<
+    CursorPaginator<SubscriptionWith<Relation>>
+  > {
+    return recurlyRequest(async () => {
+      const relations = resolveSubscriptionRelations(requested);
+      const page = await readRecurlyPage(
+        this.subscriptions(customer, perPage, status, cursor),
+      );
+
+      return {
+        data: await this.map<Relation>(
+          page.items.filter(hasStatus(status)),
+          relations,
+        ),
+        perPage,
+        hasMorePages: page.hasMorePages,
+        nextCursor: page.nextCursor,
+      };
+    });
+  }
 
   create({
     customer,
@@ -90,6 +171,60 @@ export class RecurlySubscriptionsResource implements SubscriptionsResource {
           : await this.client.terminateSubscription(subscriptionId, {
               params: { refund: 'none' },
             }),
+      ),
+    );
+  }
+
+  private subscriptions(
+    customer: string,
+    limit: number,
+    status: SubscriptionStatusFilter,
+    cursor?: string | null,
+  ): recurly.Pager<recurly.Subscription> {
+    const state =
+      status === 'all' ? undefined : RECURLY_SUBSCRIPTION_STATE_FILTERS[status];
+
+    return this.client.listAccountSubscriptions(customer, {
+      params: {
+        limit,
+        ...(state ? { state } : {}),
+        ...(cursor ? { cursor } : {}),
+      },
+    });
+  }
+
+  private async map<Relation extends RecurlySubscriptionRelation>(
+    subscriptions: recurly.Subscription[],
+    relations: ReadonlySet<RecurlySubscriptionRelation>,
+  ): Promise<SubscriptionWith<Relation>[]> {
+    const plans = relations.has('interval')
+      ? await this.getPlans(subscriptions)
+      : new Map<string, recurly.Plan>();
+
+    return subscriptions.map(
+      (subscription) =>
+        mapRecurlySubscription(
+          subscription,
+          relations,
+          plans,
+        ) as SubscriptionWith<Relation>,
+    );
+  }
+
+  private async getPlans(
+    subscriptions: recurly.Subscription[],
+  ): Promise<Map<string, recurly.Plan>> {
+    const ids = [
+      ...new Set(
+        subscriptions
+          .map((subscription) => subscription.plan?.id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    return new Map(
+      await Promise.all(
+        ids.map(async (id) => [id, await this.client.getPlan(id)] as const),
       ),
     );
   }

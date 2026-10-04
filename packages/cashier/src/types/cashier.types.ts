@@ -41,5 +41,5 @@ export interface CashierDriver<
   readonly payments: PaymentsResource<Provider>;
   readonly products: ProductsResource;
   readonly prices: PricesResource;
-  readonly subscriptions: SubscriptionsResource;
+  readonly subscriptions: SubscriptionsResource<Provider>;
 }

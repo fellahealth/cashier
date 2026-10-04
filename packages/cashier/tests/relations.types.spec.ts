@@ -77,6 +77,27 @@ const checkDefaultRelations = async (
   return payment?.amountRefunded;
 };
 
+const checkSubscriptionRelations = async (cashier: Cashier) => {
+  const page = await cashier.use().subscriptions.cursorPaginate({
+    customer: 'cus_123',
+    status: 'all',
+    with: ['product', 'interval'],
+  });
+  const productName: string | undefined = page.data[0]?.product?.name;
+  const cancelAt: Date | null | undefined = page.data[0]?.cancelAt;
+
+  // @ts-expect-error discounts were not loaded
+  void page.data[0]?.discount;
+
+  await cashier.use(CashierProvider.Recurly).subscriptions.list({
+    customer: 'code-customer-42',
+    // @ts-expect-error refunds is not a subscription relation
+    with: ['refunds'],
+  });
+
+  return { productName, cancelAt };
+};
+
 describe('relation types', () => {
   it('should only accept the relations each provider supports', () => {
     const cashier = new Cashier({
@@ -87,7 +108,8 @@ describe('relation types', () => {
       checkStripeRelations,
       checkRecurlyRelations,
       checkDefaultRelations,
-    ]).toHaveLength(3);
+      checkSubscriptionRelations,
+    ]).toHaveLength(4);
     expect(cashier.use(CashierProvider.Stripe).provider).toBe(
       CashierProvider.Stripe,
     );
