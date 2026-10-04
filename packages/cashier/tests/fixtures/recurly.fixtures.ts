@@ -3,7 +3,11 @@ import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
 import { Payment, PaymentWith } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
-import { Subscription } from '../../src/types/subscription.types';
+import {
+  Subscription,
+  SubscriptionRelation,
+  SubscriptionWith,
+} from '../../src/types/subscription.types';
 import { CashierProvider } from '../../src/types/cashier.types';
 
 const SUCCESSFUL_TRANSACTION = {
@@ -120,6 +124,8 @@ const ACTIVE_PLAN = {
   name: 'Pro Monthly',
   description: 'Monthly plan',
   state: 'active',
+  intervalUnit: 'months',
+  intervalLength: 1,
   createdAt: new Date('2026-01-01T00:00:00Z'),
 } as recurly.Plan;
 
@@ -129,13 +135,15 @@ const INACTIVE_PLAN = {
   name: 'Pro Legacy',
   description: null,
   state: 'inactive',
+  intervalUnit: 'days',
+  intervalLength: 14,
   createdAt: new Date('2025-01-01T00:00:00Z'),
 } as recurly.Plan;
 
 const ACTIVE_SUBSCRIPTION = {
   id: 'rec_sub_1',
   account: { id: 'acct_1' },
-  plan: { id: 'plan_1' },
+  plan: { id: 'plan_1', code: 'pro-monthly', name: 'Pro Monthly' },
   state: 'active',
   quantity: 1,
   unitAmount: 149.99,
@@ -143,6 +151,9 @@ const ACTIVE_SUBSCRIPTION = {
   currentPeriodStartedAt: new Date('2026-01-01T00:00:00Z'),
   currentPeriodEndsAt: new Date('2026-02-01T00:00:00Z'),
   canceledAt: null,
+  expiresAt: null,
+  pausedAt: null,
+  couponRedemptions: [],
   trialEndsAt: null,
   createdAt: new Date('2026-01-01T00:00:00Z'),
   customFields: [{ name: 'source', value: 'checkout' }],
@@ -152,12 +163,42 @@ const CANCELED_SUBSCRIPTION = {
   ...ACTIVE_SUBSCRIPTION,
   state: 'canceled',
   canceledAt: new Date('2026-01-15T00:00:00Z'),
+  expiresAt: new Date('2026-02-01T00:00:00Z'),
 } as recurly.Subscription;
 
 const EXPIRED_SUBSCRIPTION = {
   ...ACTIVE_SUBSCRIPTION,
   state: 'expired',
   canceledAt: new Date('2026-01-15T00:00:00Z'),
+  expiresAt: new Date('2026-01-15T00:00:00Z'),
+} as recurly.Subscription;
+
+const PAUSED_DISCOUNTED_SUBSCRIPTION = {
+  ...ACTIVE_SUBSCRIPTION,
+  id: 'rec_sub_2',
+  plan: { id: 'plan_2', code: 'pro-legacy', name: 'Pro Legacy' },
+  state: 'paused',
+  pausedAt: new Date('2026-01-20T00:00:00Z'),
+  couponRedemptions: [
+    {
+      state: 'inactive',
+      coupon: { code: 'old-coupon', name: 'Old', discount: { percent: 50 } },
+    },
+    {
+      state: 'active',
+      coupon: {
+        code: 'welcome-10',
+        name: 'Welcome',
+        discount: {
+          type: 'fixed',
+          currencies: [
+            { currency: 'EUR', amount: 5 },
+            { currency: 'USD', amount: 10 },
+          ],
+        },
+      },
+    },
+  ],
 } as recurly.Subscription;
 
 const EXPECTED_ACTIVE_SUBSCRIPTION: Subscription = {
@@ -169,6 +210,7 @@ const EXPECTED_ACTIVE_SUBSCRIPTION: Subscription = {
   currentPeriodStart: new Date('2026-01-01T00:00:00Z'),
   currentPeriodEnd: new Date('2026-02-01T00:00:00Z'),
   cancelAtPeriodEnd: false,
+  cancelAt: null,
   canceledAt: null,
   trialEnd: null,
   createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -371,10 +413,30 @@ export const RECURLY_FIXTURES = {
   CANCELED_SUBSCRIPTION,
   EXPIRED_SUBSCRIPTION,
   EXPECTED_ACTIVE_SUBSCRIPTION,
+  PAUSED_DISCOUNTED_SUBSCRIPTION,
+  INACTIVE_PLAN,
+  EXPECTED_ACTIVE_SUBSCRIPTION_RELATIONS: {
+    product: { id: 'plan_1', name: 'Pro Monthly' },
+    interval: { unit: 'month', count: 1 },
+    pause: null,
+    discount: null,
+  } satisfies Omit<SubscriptionWith<SubscriptionRelation>, keyof Subscription>,
+  EXPECTED_PAUSED_DISCOUNTED_SUBSCRIPTION_RELATIONS: {
+    product: { id: 'plan_2', name: 'Pro Legacy' },
+    interval: { unit: 'day', count: 14 },
+    pause: { behavior: null, resumesAt: null },
+    discount: {
+      couponId: 'welcome-10',
+      name: 'Welcome',
+      amountOff: 1000,
+      percentOff: null,
+    },
+  } satisfies Omit<SubscriptionWith<SubscriptionRelation>, keyof Subscription>,
   EXPECTED_CANCELED_SUBSCRIPTION: {
     ...EXPECTED_ACTIVE_SUBSCRIPTION,
     status: 'active',
     cancelAtPeriodEnd: true,
+    cancelAt: new Date('2026-02-01T00:00:00Z'),
     canceledAt: new Date('2026-01-15T00:00:00Z'),
   } satisfies Subscription,
   EXPECTED_EXPIRED_SUBSCRIPTION: {

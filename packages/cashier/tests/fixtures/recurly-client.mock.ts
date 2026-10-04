@@ -12,6 +12,7 @@ export const createRecurlyClientMock = () => ({
   listAccounts: jest.fn(),
   createAccount: jest.fn(),
   updateAccount: jest.fn(),
+  listAccountSubscriptions: jest.fn(),
   createSubscription: jest.fn(),
   getSubscription: jest.fn(),
   createSubscriptionChange: jest.fn(),

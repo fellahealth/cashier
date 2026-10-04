@@ -1,6 +1,10 @@
 import Stripe from 'stripe';
 import { CashierInvoiceRelations } from '../types/invoice.types';
 import { CashierPaymentRelations } from '../types/payment.types';
+import {
+  CashierSubscriptionRelations,
+  SubscriptionStatus,
+} from '../types/subscription.types';
 
 export const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2023-08-16';
 
@@ -31,6 +35,35 @@ export const STRIPE_INVOICE_RELATION_EXPAND: Record<
 export const RECURLY_PAYMENT_RELATIONS: ReadonlySet<
   CashierPaymentRelations['recurly']
 > = new Set(['refunds', 'subscription']);
+
+export const STRIPE_SUBSCRIPTION_RELATIONS: ReadonlySet<
+  CashierSubscriptionRelations['stripe']
+> = new Set(['product', 'interval', 'pause', 'discount']);
+
+export const RECURLY_SUBSCRIPTION_RELATIONS: ReadonlySet<
+  CashierSubscriptionRelations['recurly']
+> = new Set(['product', 'interval', 'pause', 'discount']);
+
+export const STRIPE_SUBSCRIPTION_STATUS_FILTERS: Partial<
+  Record<SubscriptionStatus, Stripe.SubscriptionListParams.Status>
+> = {
+  active: 'active',
+  trialing: 'trialing',
+  past_due: 'past_due',
+  unpaid: 'unpaid',
+  paused: 'paused',
+  canceled: 'canceled',
+  incomplete: 'incomplete',
+  incomplete_expired: 'incomplete_expired',
+};
+
+export const RECURLY_SUBSCRIPTION_STATE_FILTERS: Partial<
+  Record<SubscriptionStatus, string>
+> = {
+  active: 'live',
+  canceled: 'expired',
+  future: 'future',
+};
 
 export const RECURLY_INVOICE_RELATIONS: ReadonlySet<
   CashierInvoiceRelations['recurly']
