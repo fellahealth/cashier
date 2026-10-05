@@ -110,7 +110,7 @@ export class StripeSubscriptionsResource implements SubscriptionsResource<Cashie
 
   update(
     subscriptionId: string,
-    { price, quantity, metadata }: UpdateSubscriptionParams,
+    { price, quantity, paymentMethod, metadata }: UpdateSubscriptionParams,
   ): Promise<Subscription> {
     return stripeRequest(async () => {
       const isItemChange = price !== undefined || quantity !== undefined;
@@ -127,6 +127,7 @@ export class StripeSubscriptionsResource implements SubscriptionsResource<Cashie
       return mapStripeSubscription(
         await this.client.subscriptions.update(subscriptionId, {
           ...(items ? { items } : {}),
+          ...(paymentMethod ? { default_payment_method: paymentMethod } : {}),
           ...(metadata ? { metadata } : {}),
         }),
       );
