@@ -4,3 +4,6 @@ const getCurrencyExponent = (currency: string): number =>
 
 export const toMinorUnits = (majorUnits: number, currency: string): number =>
   Math.round(majorUnits * 10 ** getCurrencyExponent(currency));
+
+export const toMajorUnits = (minorUnits: number, currency: string): number =>
+  minorUnits / 10 ** getCurrencyExponent(currency);

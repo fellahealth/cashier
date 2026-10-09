@@ -1,6 +1,8 @@
+import Stripe from 'stripe';
 import { StripePaymentsResource } from '../../src/drivers/stripe/resources/stripe-payments.resource';
 import { NotFoundError } from '../../src/errors/not-found.error';
 import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
+import { ValidationError } from '../../src/errors/validation.error';
 import { STRIPE_FIXTURES } from '../fixtures/stripe.fixtures';
 import {
   StripeClientMock,
@@ -9,6 +11,7 @@ import {
   createStripeMissingResourceError,
 } from '../fixtures/stripe-client.mock';
 import { CashierProvider } from '../../src/types/cashier.types';
+import { RefundReason } from '../../src/types/payment.types';
 
 const RELATIONS = [
   'refunds',
@@ -17,6 +20,14 @@ const RELATIONS = [
   'reversal',
   'subscription',
 ] as const;
+
+const createInvalidRequestError = (code: string, message: string) =>
+  new Stripe.errors.StripeInvalidRequestError({
+    type: 'invalid_request_error',
+    code,
+    message,
+    statusCode: 400,
+  } as Stripe.StripeRawError);
 
 const EXPAND = [
   'data.latest_charge',
@@ -343,6 +354,158 @@ describe('StripePaymentsResource', () => {
 
       expect(payment?.subscription).toBeNull();
       expect(payment?.invoiceId).toBe(STRIPE_FIXTURES.INVOICE_ID);
+    });
+  });
+
+  describe('refund', () => {
+    const refundWith = async (overrides: Record<string, unknown>) => {
+      client.refunds.create.mockResolvedValue({
+        ...STRIPE_FIXTURES.REFUND,
+        ...overrides,
+      });
+
+      return payments.refund(STRIPE_FIXTURES.PAYMENT_ID);
+    };
+
+    beforeEach(() => {
+      client.refunds.create.mockResolvedValue(STRIPE_FIXTURES.REFUND);
+    });
+
+    it('should refund what is left of the payment intent when no amount is given', async () => {
+      const refund = await payments.refund(STRIPE_FIXTURES.PAYMENT_ID);
+
+      expect(client.refunds.create).toHaveBeenCalledWith({
+        payment_intent: STRIPE_FIXTURES.PAYMENT_ID,
+      });
+      expect(refund).toEqual(STRIPE_FIXTURES.EXPECTED_REFUND);
+    });
+
+    it('should refund part of the payment intent with the amount in minor units', async () => {
+      await payments.refund(STRIPE_FIXTURES.PAYMENT_ID, { amount: 5000 });
+
+      expect(client.refunds.create).toHaveBeenCalledWith({
+        payment_intent: STRIPE_FIXTURES.PAYMENT_ID,
+        amount: 5000,
+      });
+    });
+
+    it('should pass an amount of 0 to Stripe instead of refunding in full', async () => {
+      await payments.refund(STRIPE_FIXTURES.PAYMENT_ID, { amount: 0 });
+
+      expect(client.refunds.create).toHaveBeenCalledWith({
+        payment_intent: STRIPE_FIXTURES.PAYMENT_ID,
+        amount: 0,
+      });
+    });
+
+    it.each([
+      [RefundReason.Duplicate, 'duplicate'],
+      [RefundReason.Fraudulent, 'fraudulent'],
+      [RefundReason.RequestedByCustomer, 'requested_by_customer'],
+    ])(
+      'should pass %s to Stripe as the %s reason, with the metadata',
+      async (reason, stripeReason) => {
+        await payments.refund(STRIPE_FIXTURES.PAYMENT_ID, {
+          amount: 5000,
+          reason,
+          metadata: { customer: 'customer-42' },
+        });
+
+        expect(client.refunds.create).toHaveBeenCalledWith({
+          payment_intent: STRIPE_FIXTURES.PAYMENT_ID,
+          amount: 5000,
+          reason: stripeReason,
+          metadata: { customer: 'customer-42' },
+        });
+      },
+    );
+
+    it('should pass the metadata to Stripe without a reason', async () => {
+      await payments.refund(STRIPE_FIXTURES.PAYMENT_ID, {
+        metadata: { customer: 'customer-42' },
+      });
+
+      expect(client.refunds.create).toHaveBeenCalledWith({
+        payment_intent: STRIPE_FIXTURES.PAYMENT_ID,
+        metadata: { customer: 'customer-42' },
+      });
+    });
+
+    it.each([
+      [RefundReason.Duplicate, 'duplicate'],
+      [RefundReason.Fraudulent, 'fraudulent'],
+      [RefundReason.RequestedByCustomer, 'requested_by_customer'],
+      [null, 'expired_uncaptured_charge'],
+      [null, null],
+    ])(
+      'should map the reason to %s when Stripe has %s',
+      async (reason, stripeReason) => {
+        const refund = await refundWith({ reason: stripeReason });
+
+        expect(refund.reason).toBe(reason);
+      },
+    );
+
+    it('should read the payment id from an expanded payment intent', async () => {
+      const refund = await refundWith({
+        payment_intent: { id: STRIPE_FIXTURES.PAYMENT_ID },
+      });
+
+      expect(refund.paymentId).toBe(STRIPE_FIXTURES.PAYMENT_ID);
+    });
+
+    it.each([
+      ['succeeded', 'succeeded'],
+      ['pending', 'pending'],
+      ['requires_action', 'pending'],
+      ['failed', 'failed'],
+      ['canceled', 'canceled'],
+      ['some_new_status', 'unknown'],
+      [null, 'unknown'],
+    ])('should map the %s status to %s', async (stripeStatus, status) => {
+      const refund = await refundWith({ status: stripeStatus });
+
+      expect(refund.status).toBe(status);
+    });
+
+    it('should throw NotFoundError when the payment intent does not exist', async () => {
+      client.refunds.create.mockRejectedValue(
+        createStripeMissingResourceError(),
+      );
+
+      await expect(
+        payments.refund(STRIPE_FIXTURES.PAYMENT_ID),
+      ).rejects.toMatchObject({
+        constructor: NotFoundError,
+        provider: CashierProvider.Stripe,
+        providerCode: 'resource_missing',
+      });
+    });
+
+    it.each([
+      [
+        'the payment intent is already refunded',
+        'charge_already_refunded',
+        'Charge ch_123 has already been refunded.',
+      ],
+      [
+        'the amount is more than what is left',
+        'amount_too_large',
+        'Refund amount is greater than unrefunded amount on charge.',
+      ],
+    ])('should throw ValidationError when %s', async (_case, code, message) => {
+      client.refunds.create.mockRejectedValue(
+        createInvalidRequestError(code, message),
+      );
+
+      await expect(
+        payments.refund(STRIPE_FIXTURES.PAYMENT_ID, { amount: 99999 }),
+      ).rejects.toMatchObject({
+        constructor: ValidationError,
+        provider: CashierProvider.Stripe,
+        providerCode: code,
+        message,
+      });
     });
   });
 });

@@ -6,6 +6,8 @@ import {
   PaymentWith,
   PaymentsResource,
   ProviderPaymentRelation,
+  Refund,
+  RefundPaymentParams,
 } from '../../../types/payment.types';
 import { CursorPaginator } from '../../../types/pagination.types';
 import {
@@ -13,11 +15,14 @@ import {
   RECURLY_MAX_LIST_LIMIT,
   RECURLY_PAYMENT_RELATIONS,
 } from '../../../constants/cashier.constants';
+import { ValidationError } from '../../../errors/validation.error';
 import { resolveRelations } from '../../../utils/relations.utils';
+import { toMajorUnits } from '../../../utils/money.utils';
 import {
   mapRecurlyPayment,
   sumRecurlyRefunds,
 } from '../mappers/recurly-payment.mapper';
+import { mapRecurlyRefund } from '../mappers/recurly-refund.mapper';
 import { readRecurlyItems, readRecurlyPage } from '../recurly-page';
 import { recurlyRequest } from '../recurly-request';
 
@@ -81,6 +86,35 @@ export class RecurlyPaymentsResource implements PaymentsResource<CashierProvider
         hasMorePages: page.hasMorePages,
         nextCursor: page.nextCursor,
       };
+    });
+  }
+
+  refund(
+    paymentId: string,
+    { amount }: RefundPaymentParams = {},
+  ): Promise<Refund> {
+    return recurlyRequest(async () => {
+      const transaction = await this.client.getTransaction(paymentId);
+      const invoiceId = transaction.invoice?.id;
+
+      if (!invoiceId) {
+        throw new ValidationError(
+          `Payment ${paymentId} has no invoice to refund`,
+          { provider: CashierProvider.Recurly },
+        );
+      }
+
+      const currency = (transaction.currency ?? '').toUpperCase();
+
+      return mapRecurlyRefund(
+        await this.client.refundInvoice(invoiceId, {
+          type: 'amount',
+          ...(amount === undefined
+            ? {}
+            : { amount: toMajorUnits(amount, currency) }),
+        }),
+        transaction.id ?? paymentId,
+      );
     });
   }
 

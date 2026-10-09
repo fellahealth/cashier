@@ -1,7 +1,7 @@
 import * as recurly from 'recurly';
 import { Customer } from '../../src/types/customer.types';
 import { Invoice } from '../../src/types/invoice.types';
-import { Payment, PaymentWith } from '../../src/types/payment.types';
+import { Payment, PaymentWith, Refund } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import {
   Subscription,
@@ -60,6 +60,21 @@ const REFUNDS = [
   createRefund('rec_txn_5', 'rec_txn_1', 'declined', 10),
   createRefund('rec_txn_6', 'rec_txn_9', 'success', 20),
 ];
+
+const CREDIT_INVOICE = {
+  id: 'rec_inv_4',
+  number: '1004',
+  account: { id: 'acct_1' },
+  type: 'credit',
+  state: 'closed',
+  currency: 'gbp',
+  total: -129,
+  createdAt: new Date('2026-01-05T00:00:00Z'),
+  transactions: [
+    createRefund('rec_txn_8', 'rec_txn_9', 'success', 20),
+    createRefund('rec_txn_7', 'rec_txn_1', 'success', 129),
+  ],
+} as recurly.Invoice;
 
 const PAID_INVOICE = {
   id: 'rec_inv_1',
@@ -276,6 +291,20 @@ export const RECURLY_FIXTURES = {
   ZERO_DECIMAL_INVOICE,
   TRANSACTIONS: [SUCCESSFUL_TRANSACTION, DECLINED_TRANSACTION],
   REFUNDS,
+  PAYMENT_ID: 'rec_txn_1',
+  SUCCESSFUL_TRANSACTION,
+  DECLINED_TRANSACTION,
+  CREDIT_INVOICE,
+  EXPECTED_REFUND: {
+    id: 'rec_txn_7',
+    paymentId: 'rec_txn_1',
+    status: 'succeeded',
+    amount: 12900,
+    currency: 'GBP',
+    reason: null,
+    createdAt: new Date('2026-01-05T00:00:00Z'),
+    provider: CashierProvider.Recurly,
+  } satisfies Refund,
   CURSOR: 'w3n9zpm1qfal:1767225600.0',
   NEXT_PATH:
     '/accounts/acct_1/transactions?cursor=w3n9zpm1qfal%3A1767225600.0&limit=2&order=desc&sort=created_at',

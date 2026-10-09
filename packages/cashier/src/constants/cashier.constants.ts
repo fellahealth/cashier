@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { CashierInvoiceRelations } from '../types/invoice.types';
-import { CashierPaymentRelations } from '../types/payment.types';
+import { CashierPaymentRelations, RefundReason } from '../types/payment.types';
 import {
   CashierSubscriptionRelations,
   SubscriptionStatus,
@@ -23,6 +23,15 @@ export const STRIPE_PAYMENT_RELATION_EXPAND: Record<
   receipt: ['latest_charge'],
   reversal: ['latest_charge.refunds'],
   subscription: ['invoice.subscription'],
+};
+
+export const STRIPE_REFUND_REASONS: Record<
+  RefundReason,
+  Stripe.RefundCreateParams.Reason
+> = {
+  [RefundReason.Duplicate]: 'duplicate',
+  [RefundReason.Fraudulent]: 'fraudulent',
+  [RefundReason.RequestedByCustomer]: 'requested_by_customer',
 };
 
 export const STRIPE_INVOICE_RELATION_EXPAND: Record<
