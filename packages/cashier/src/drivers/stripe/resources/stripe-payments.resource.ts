@@ -6,14 +6,18 @@ import {
   PaymentWith,
   PaymentsResource,
   ProviderPaymentRelation,
+  Refund,
+  RefundPaymentParams,
 } from '../../../types/payment.types';
 import { CursorPaginator } from '../../../types/pagination.types';
 import {
   DEFAULT_LIST_LIMIT,
   STRIPE_PAYMENT_RELATION_EXPAND,
+  STRIPE_REFUND_REASONS,
 } from '../../../constants/cashier.constants';
 import { resolveRelations } from '../../../utils/relations.utils';
 import { mapStripePayment } from '../mappers/stripe-payment.mapper';
+import { mapStripeRefund } from '../mappers/stripe-refund.mapper';
 import {
   toStripeCursorPaginator,
   toStripeExpand,
@@ -54,6 +58,21 @@ export class StripePaymentsResource implements PaymentsResource<CashierProvider.
       },
       perPage,
       relations,
+    );
+  }
+
+  refund(paymentId: string, params: RefundPaymentParams = {}): Promise<Refund> {
+    return stripeRequest(async () =>
+      mapStripeRefund(
+        await this.client.refunds.create({
+          payment_intent: paymentId,
+          ...(params.amount === undefined ? {} : { amount: params.amount }),
+          ...(params.reason
+            ? { reason: STRIPE_REFUND_REASONS[params.reason] }
+            : {}),
+          ...(params.metadata ? { metadata: params.metadata } : {}),
+        }),
+      ),
     );
   }
 

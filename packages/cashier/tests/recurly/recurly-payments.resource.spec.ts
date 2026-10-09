@@ -1,12 +1,17 @@
+import * as recurly from 'recurly';
 import { RecurlyPaymentsResource } from '../../src/drivers/recurly/resources/recurly-payments.resource';
+import { NotFoundError } from '../../src/errors/not-found.error';
 import { ProviderError } from '../../src/errors/provider.error';
 import { UnsupportedOperationError } from '../../src/errors/unsupported-operation.error';
+import { ValidationError } from '../../src/errors/validation.error';
 import { CashierProvider } from '../../src/types/cashier.types';
+import { RefundReason } from '../../src/types/payment.types';
 import {
   RECURLY_FIXTURES,
   createFailingRecurlyPager,
   createRecurlyPagePager,
   createRecurlyPager,
+  withRecurlyStatus,
 } from '../fixtures/recurly.fixtures';
 import {
   RecurlyClientMock,
@@ -285,6 +290,186 @@ describe('RecurlyPaymentsResource', () => {
       await expect(
         payments.cursorPaginate({ customer: RECURLY_FIXTURES.ACCOUNT_ID }),
       ).rejects.toBeInstanceOf(ProviderError);
+    });
+  });
+
+  describe('refund', () => {
+    const refundWith = async (creditInvoice: Partial<recurly.Invoice>) => {
+      client.refundInvoice.mockResolvedValue({
+        ...RECURLY_FIXTURES.CREDIT_INVOICE,
+        ...creditInvoice,
+      });
+
+      return payments.refund(RECURLY_FIXTURES.PAYMENT_ID);
+    };
+
+    beforeEach(() => {
+      client.getTransaction.mockResolvedValue(
+        RECURLY_FIXTURES.SUCCESSFUL_TRANSACTION,
+      );
+      client.refundInvoice.mockResolvedValue(RECURLY_FIXTURES.CREDIT_INVOICE);
+    });
+
+    it("should refund the invoice's refundable amount when no amount is given", async () => {
+      const refund = await payments.refund(RECURLY_FIXTURES.PAYMENT_ID);
+
+      expect(client.getTransaction).toHaveBeenCalledWith(
+        RECURLY_FIXTURES.PAYMENT_ID,
+      );
+      expect(client.refundInvoice).toHaveBeenCalledWith(
+        RECURLY_FIXTURES.INVOICE_ID,
+        { type: 'amount' },
+      );
+      expect(refund).toEqual(RECURLY_FIXTURES.EXPECTED_REFUND);
+    });
+
+    it.each([
+      ['gbp', 4050, 40.5],
+      ['jpy', 3000, 3000],
+    ])(
+      'should refund part of a %s invoice, converting %s minor units to %s',
+      async (currency, amount, recurlyAmount) => {
+        client.getTransaction.mockResolvedValue({
+          ...RECURLY_FIXTURES.SUCCESSFUL_TRANSACTION,
+          currency,
+        });
+
+        await payments.refund(RECURLY_FIXTURES.PAYMENT_ID, { amount });
+
+        expect(client.refundInvoice).toHaveBeenCalledWith(
+          RECURLY_FIXTURES.INVOICE_ID,
+          { type: 'amount', amount: recurlyAmount },
+        );
+      },
+    );
+
+    it('should pass an amount of 0 to Recurly instead of refunding in full', async () => {
+      await payments.refund(RECURLY_FIXTURES.PAYMENT_ID, { amount: 0 });
+
+      expect(client.refundInvoice).toHaveBeenCalledWith(
+        RECURLY_FIXTURES.INVOICE_ID,
+        { type: 'amount', amount: 0 },
+      );
+    });
+
+    it('should ignore the reason and metadata, which Recurly cannot store', async () => {
+      const refund = await payments.refund(RECURLY_FIXTURES.PAYMENT_ID, {
+        amount: 4050,
+        reason: RefundReason.RequestedByCustomer,
+        metadata: { customer: 'customer-42' },
+      });
+
+      expect(client.refundInvoice).toHaveBeenCalledWith(
+        RECURLY_FIXTURES.INVOICE_ID,
+        { type: 'amount', amount: 40.5 },
+      );
+      expect(refund.reason).toBeNull();
+    });
+
+    it('should throw ValidationError when the payment has no invoice', async () => {
+      client.getTransaction.mockResolvedValue(
+        RECURLY_FIXTURES.DECLINED_TRANSACTION,
+      );
+
+      await expect(payments.refund('rec_txn_2')).rejects.toMatchObject({
+        constructor: ValidationError,
+        provider: CashierProvider.Recurly,
+        message: 'Payment rec_txn_2 has no invoice to refund',
+      });
+      expect(client.refundInvoice).not.toHaveBeenCalled();
+    });
+
+    it('should use the id of the loaded transaction as the payment id', async () => {
+      const refund = await payments.refund('uuid-62b7a7d9a5b9e3e5');
+
+      expect(client.getTransaction).toHaveBeenCalledWith(
+        'uuid-62b7a7d9a5b9e3e5',
+      );
+      expect(refund.paymentId).toBe(RECURLY_FIXTURES.PAYMENT_ID);
+    });
+
+    it('should fall back to the first refund transaction when none refunds the payment', async () => {
+      const [otherRefund] = RECURLY_FIXTURES.CREDIT_INVOICE.transactions ?? [];
+
+      const refund = await refundWith({ transactions: [otherRefund!] });
+
+      expect(refund).toMatchObject({ id: 'rec_txn_8', amount: 2000 });
+    });
+
+    it('should map the credit invoice when Recurly issued the refund as credit', async () => {
+      const refund = await refundWith({ transactions: [] });
+
+      expect(refund).toEqual({
+        ...RECURLY_FIXTURES.EXPECTED_REFUND,
+        id: 'rec_inv_4',
+        status: 'unknown',
+      });
+    });
+
+    it.each([
+      ['pending', 'pending'],
+      ['processing', 'pending'],
+      ['scheduled', 'pending'],
+      ['declined', 'failed'],
+      ['error', 'failed'],
+      ['void', 'canceled'],
+      ['chargeback', 'unknown'],
+    ])('should map the %s status to %s', async (recurlyStatus, status) => {
+      const [, paymentRefund] =
+        RECURLY_FIXTURES.CREDIT_INVOICE.transactions ?? [];
+
+      const refund = await refundWith({
+        transactions: [{ ...paymentRefund, status: recurlyStatus }],
+      });
+
+      expect(refund.status).toBe(status);
+    });
+
+    it('should throw NotFoundError when the payment does not exist', async () => {
+      client.getTransaction.mockRejectedValue(
+        withRecurlyStatus(
+          new recurly.errors.NotFoundError(
+            "Couldn't find Transaction",
+            'not_found',
+            {},
+          ),
+          404,
+        ),
+      );
+
+      await expect(
+        payments.refund(RECURLY_FIXTURES.PAYMENT_ID),
+      ).rejects.toMatchObject({
+        constructor: NotFoundError,
+        provider: CashierProvider.Recurly,
+        providerStatus: 404,
+      });
+      expect(client.refundInvoice).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['the invoice is already refunded', 'Invoice has already been refunded'],
+      [
+        'the amount is more than what is left',
+        'Amount cannot exceed the refundable amount',
+      ],
+    ])('should throw ValidationError when %s', async (_case, message) => {
+      client.refundInvoice.mockRejectedValue(
+        withRecurlyStatus(
+          new recurly.errors.ValidationError(message, 'validation', {}),
+          422,
+        ),
+      );
+
+      await expect(
+        payments.refund(RECURLY_FIXTURES.PAYMENT_ID, { amount: 99999 }),
+      ).rejects.toMatchObject({
+        constructor: ValidationError,
+        provider: CashierProvider.Recurly,
+        providerStatus: 422,
+        providerCode: 'validation',
+        message,
+      });
     });
   });
 });

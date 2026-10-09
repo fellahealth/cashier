@@ -5,6 +5,8 @@ import {
   Payment,
   PaymentRelation,
   PaymentWith,
+  Refund,
+  RefundReason,
 } from '../../src/types/payment.types';
 import { Product } from '../../src/types/product.types';
 import { Price } from '../../src/types/price.types';
@@ -234,6 +236,18 @@ const INCOMPLETE_PAYMENT_INTENT = {
   created: 1767398400,
 } as unknown as Stripe.PaymentIntent;
 
+const REFUND = {
+  id: 're_123',
+  object: 'refund',
+  payment_intent: 'pi_123',
+  status: 'succeeded',
+  amount: 12900,
+  currency: 'gbp',
+  reason: 'requested_by_customer',
+  metadata: {},
+  created: 1767484800,
+} as unknown as Stripe.Refund;
+
 export const STRIPE_FIXTURES = {
   CUSTOMER,
   DELETED_CUSTOMER,
@@ -248,6 +262,18 @@ export const STRIPE_FIXTURES = {
     provider: CashierProvider.Stripe,
   } satisfies Customer,
   CUSTOMER_ID: 'cus_123',
+  PAYMENT_ID: 'pi_123',
+  REFUND,
+  EXPECTED_REFUND: {
+    id: 're_123',
+    paymentId: 'pi_123',
+    status: 'succeeded',
+    amount: 12900,
+    currency: 'GBP',
+    reason: RefundReason.RequestedByCustomer,
+    createdAt: new Date(1767484800 * 1000),
+    provider: CashierProvider.Stripe,
+  } satisfies Refund,
   INVOICE_ID: 'in_123',
   PRODUCT_ID: 'prod_123',
   PRICE_ID: 'price_123',

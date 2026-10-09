@@ -1,9 +1,10 @@
 # Payments
 
-`driver.payments` lists a customer's payments: the charges made against their payment method, whether they succeeded or not.
+`driver.payments` lists a customer's payments, the charges made against their payment method whether they succeeded or not, and refunds them.
 
 - [`payments.list(params)`](#paymentslistparams)
 - [`payments.cursorPaginate(params)`](#paymentscursorpaginateparams)
+- [`payments.refund(paymentId, params?)`](#paymentsrefundpaymentid-params)
 - [Loading relations with `with`](#loading-relations-with-with)
 - [The `Payment` object](#the-payment-object)
 
@@ -56,6 +57,78 @@ It returns a `CursorPaginator<Payment>`. See [Pagination and limits](drivers.md#
 | -------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Stripe   | Lists the customer's PaymentIntents after the cursor, which is the id of the last payment. The maximum `perPage` is 100. |
 | Recurly  | Lists the account's payment transactions with Recurly's own cursor. The maximum `perPage` is 200.                        |
+
+## `payments.refund(paymentId, params?)`
+
+Refunds a payment, in full or in part, and returns the refund.
+
+```ts
+import { RefundReason } from '@aios-medical/cashier';
+
+const refund = await driver.payments.refund('pi_123');
+
+const partialRefund = await driver.payments.refund('pi_123', {
+  amount: 5000,
+  reason: RefundReason.RequestedByCustomer,
+  metadata: { customer: 'customer-42' },
+});
+```
+
+`paymentId` is the `id` of a [`Payment`](#the-payment-object).
+
+| Parameter  | Type                     | Description                                                                                |
+| ---------- | ------------------------ | ------------------------------------------------------------------------------------------ |
+| `amount`   | `number`                 | The amount to refund, in minor units. Leave it out to refund all that is still refundable. |
+| `reason`   | `RefundReason`           | Why the payment is refunded. See [Refund reasons](#refund-reasons).                        |
+| `metadata` | `Record<string, string>` | Stored on the refund where the provider supports it.                                       |
+
+Pass the same parameters on every provider. A provider that cannot store `reason` or `metadata` ignores them, so the refund itself never depends on them.
+
+| Provider | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stripe   | Creates a refund for the PaymentIntent, with `reason` mapped to Stripe's reason and `metadata` stored on the refund.                                                                                                                                                                                                                                                                                                                                                            |
+| Recurly  | Recurly refunds invoices, not transactions. Cashier loads the transaction, then refunds its invoice by amount, with the amount converted to major units. Without `amount`, it refunds the invoice's refundable amount, which is more than the payment when the invoice was also paid by other transactions. A payment without an invoice rejects with `ValidationError`. Recurly has nowhere to store a reason or metadata on a refund, so `reason` and `metadata` are ignored. |
+
+A payment that does not exist rejects with `NotFoundError`. A payment that is already fully refunded, or an `amount` larger than what is left to refund, rejects with `ValidationError`. See [Errors](errors.md).
+
+To refund several payments, call `refund` once for each.
+
+### Refund reasons
+
+`RefundReason` is an enum, so the same value works on every provider:
+
+| `RefundReason`                     | Stripe                  | Recurly |
+| ---------------------------------- | ----------------------- | ------- |
+| `RefundReason.Duplicate`           | `duplicate`             | Ignored |
+| `RefundReason.Fraudulent`          | `fraudulent`            | Ignored |
+| `RefundReason.RequestedByCustomer` | `requested_by_customer` | Ignored |
+
+On Stripe, `RefundReason.Fraudulent` also adds the card and email to your Stripe block lists. Put any other details, such as a note in your own words, in `metadata`.
+
+### The `Refund` object
+
+| Field       | Type                   | Description                                                                                                                                                             |
+| ----------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string`               | Stripe's refund id, or the id of Recurly's `refund` transaction.                                                                                                        |
+| `paymentId` | `string`               | The id of the refunded payment.                                                                                                                                         |
+| `status`    | `RefundStatus`         | See below.                                                                                                                                                              |
+| `amount`    | `number`               | The amount refunded, in minor units.                                                                                                                                    |
+| `currency`  | `string`               | Uppercase ISO 4217 code.                                                                                                                                                |
+| `reason`    | `RefundReason \| null` | Stripe's reason as a `RefundReason`. `null` when there is none or Stripe's reason has no `RefundReason`, such as `expired_uncaptured_charge`. Always `null` on Recurly. |
+| `createdAt` | `Date`                 | When the refund was created.                                                                                                                                            |
+| `provider`  | `CashierProvider`      | The provider it came from.                                                                                                                                              |
+
+On Recurly, the refund is read from the credit invoice that `refundInvoice` returns: its `refund` transaction for this payment, or its first `refund` transaction. When Recurly issued the whole refund as account credit, there is no refund transaction, so `id` is the credit invoice's id and `status` is `unknown`.
+
+### Refund status
+
+| `status`    | Stripe                       | Recurly                              |
+| ----------- | ---------------------------- | ------------------------------------ |
+| `succeeded` | `succeeded`                  | `success`                            |
+| `pending`   | `pending`, `requires_action` | `pending`, `processing`, `scheduled` |
+| `failed`    | `failed`                     | `declined`, `error`                  |
+| `canceled`  | `canceled`                   | `void`                               |
+| `unknown`   | Any other status             | Any other status                     |
 
 ## Loading relations with `with`
 

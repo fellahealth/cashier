@@ -20,6 +20,15 @@ export type PaymentDisputeStatus =
   | 'lost'
   | 'unknown';
 
+export enum RefundReason {
+  Duplicate = 'duplicate',
+  Fraudulent = 'fraudulent',
+  RequestedByCustomer = 'requested_by_customer',
+}
+
+export type RefundStatus =
+  'succeeded' | 'pending' | 'failed' | 'canceled' | 'unknown';
+
 export interface PaymentDispute {
   id: string;
   status: PaymentDisputeStatus;
@@ -42,6 +51,17 @@ export interface Payment {
   amount: number;
   currency: string;
   description: string | null;
+  createdAt: Date;
+  provider: CashierProvider;
+}
+
+export interface Refund {
+  id: string;
+  paymentId: string;
+  status: RefundStatus;
+  amount: number;
+  currency: string;
+  reason: RefundReason | null;
   createdAt: Date;
   provider: CashierProvider;
 }
@@ -81,6 +101,12 @@ export interface CursorPaginatePaymentsParams<
 >
   extends CursorPaginateParams, WithParams<Relation> {}
 
+export interface RefundPaymentParams {
+  amount?: number;
+  reason?: RefundReason;
+  metadata?: Record<string, string>;
+}
+
 export interface PaymentsResource<
   Provider extends CashierProvider = CashierProvider,
 > {
@@ -90,4 +116,5 @@ export interface PaymentsResource<
   cursorPaginate<Relation extends ProviderPaymentRelation<Provider> = never>(
     params: CursorPaginatePaymentsParams<Relation>,
   ): Promise<CursorPaginator<PaymentWith<Relation>>>;
+  refund(paymentId: string, params?: RefundPaymentParams): Promise<Refund>;
 }

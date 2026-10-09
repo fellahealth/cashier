@@ -6,7 +6,7 @@ Every method rejects with a subclass of `CashierError`. Raw Stripe or Recurly er
 
 | Error                       | `code`                  | When                                                                                                                    |
 | --------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `NotFoundError`             | `not_found`             | The customer, invoice, product, price or subscription does not exist, or the Stripe customer was deleted.               |
+| `NotFoundError`             | `not_found`             | The customer, invoice, payment, product, price or subscription does not exist, or the Stripe customer was deleted.      |
 | `AuthenticationError`       | `authentication`        | The API key is missing or invalid.                                                                                      |
 | `AuthorizationError`        | `authorization`         | The API key is valid but not allowed to perform the request.                                                            |
 | `ValidationError`           | `validation`            | The request has invalid or missing parameters, from the provider or from Cashier's own checks.                          |
